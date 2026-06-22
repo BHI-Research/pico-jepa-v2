@@ -1,0 +1,52 @@
+# ---- LaTeX build artifacts ----
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+*.bcf
+*.run.xml
+paper/output.txt
+# Generated PDF (reproducible via paper/compile.sh)
+paper/*.pdf
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# ---- ML / experiment artifacts ----
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.safetensors
+wandb/
+runs/
+lightning_logs/
+checkpoints/
+data/
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
