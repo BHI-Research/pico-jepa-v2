@@ -10,7 +10,7 @@ models*, each trained on a portion of the data. The central hypothesis is that a
 set of pico-JEPA models can outperform a single, larger model trained on all the
 data.
 
-This is the v2 of the project: an automated search system (`autoresearch/`)
+This is the v2 of the project: an automated research system (`autoresearch/`)
 drives the full experiment end-to-end and evaluates the hypothesis on a
 protected holdout.
 
