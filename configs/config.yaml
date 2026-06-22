@@ -1,0 +1,94 @@
+# config.yaml
+# Setup que produjo gap +5.10pp SUPPORTED (experiment id=8 del ledger, 21 may).
+# Receta clave: encoder fine-tuneado (freeze_encoder=False), 6 submodels con
+# partition_strategy=stratified-by-class, diversify_submodels=True, head attentive.
+# El "mean_val_acc=38.75" del id=8 es promedio de 6 submodels cada uno con su
+# partition (~115 train videos), NO un único modelo sobre 1173.
+# embed_dim mantenido en 128 para coincidir con el encoder del 9 may en disco.
+
+# processing device
+force_cpu: false
+
+# Video & Data Loading
+video_dir: "/dataset/k700-2020/train/"
+csv_file: "pretrain_subset.csv"
+
+# Phase-aware paths
+pretrain_video_dir: "/dataset/k700-2020/train/"
+pretrain_csv_path:  "/dataset/k700-2020/train/pretrain_subset.csv"
+classify_video_dir: "/dataset/k700-2020/train/"
+classify_csv_path:  "/dataset/k700-2020/train/classify_subset.csv"
+
+frames_per_clip: 8
+resize_height: 224
+resize_width: 224
+video_channels: 3
+
+# ViT Backbone — embed=128 para coincidir con el encoder del 9 may
+vit_patch_size_t: 2
+vit_patch_size_h: 16
+vit_patch_size_w: 16
+vit_embed_dim: 192
+vit_depth: 8
+vit_num_heads: 8
+vit_mlp_ratio: 3.0
+vit_dropout: 0.1
+
+# JEPA Specific — pretext task igual al run comparable; solo se suaviza la dinámica.
+predictor_depth: 2
+predictor_heads: 4
+mask_ratio: 0.8
+ema_decay: 0.998                 # subido de 0.996 -> target más estable, menos overfitting
+
+# Phase B knobs
+masking_strategy: multiblock
+num_mask_blocks: 3
+ema_decay_start: 0.998           # subido de 0.996 (coherente con ema_decay)
+ema_decay_end: 0.9999
+layerwise_lr_decay: 0.9
+
+# Pre-training (JEPA)
+batch_size: 8
+learning_rate: 0.0001            # bajado de 2e-4 -> el mínimo de loss llegaba en epoch 3 y subía (overfitting). LR menor = mínimo más tardío y estable.
+weight_decay: 0.05
+num_epochs: 20                   # best-checkpoint saving en train.py descarta la cola de overfitting automáticamente
+num_workers: 0
+encoder_save_path: "./pico_jepa_pretrained_encoder.pth"
+predictor_lr_multiplier: 2.0
+warmup_epochs: 3
+final_lr: 1.0e-6
+clip_grad_norm: 1.0
+
+# Classification (RECETA DEL EXPERIMENT id=8 / gap +5.10pp SUPPORTED).
+# Clave: encoder NO frozen, fine-tuning con LR bajo (3e-5), 8 epochs, 6 submodels
+# con stratified-by-class y heads diversificadas. NO usar freeze_encoder=True.
+csv_file_labeled: "classify_subset.csv"
+num_classes: 10
+vit_dropout_classify: 0.0
+freeze_encoder: False
+classifier_save_path: "./pico_jepa_classifier.pth"
+num_epochs_classify: 8
+batch_size_classify: 16
+learning_rate_classifier: 5.0e-4
+learning_rate_encoder_finetune: 3.0e-5
+classify_weight_decay: 0.05
+warmup_epochs_classify: 2
+final_lr_classify: 1.0e-7
+clip_grad_norm_classify: 1.0
+num_models: 6
+partition_strategy: stratified-by-class
+diversify_submodels: True
+
+# Phase A: V-JEPA-inspired classification head (cross-attention probe)
+head_type: attentive
+head_attn_heads: 4
+head_mlp_ratio: 2.0
+
+# Multi-clip eval (V-JEPA standard)
+num_eval_clips: 10
+
+# Feature Visualization Specific
+num_videos_for_viz: 20
+max_patches_for_viz: 2000
+pca_components: 50
+tsne_perplexity: 30.0

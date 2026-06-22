@@ -23,6 +23,8 @@ paper/*.pdf
 __pycache__/
 *.py[cod]
 *$py.class
+# Always keep package markers
+!__init__.py
 *.egg-info/
 .eggs/
 build/

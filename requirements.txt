@@ -1,0 +1,16 @@
+# Core deep learning (install torch/torchvision per your CUDA setup; see README)
+torch
+torchvision
+torchcodec
+numpy
+
+# Data / utils
+pandas
+matplotlib
+opencv-python
+scikit-learn
+pyyaml
+
+# autoresearch LLM proposer (optional; only needed for --proposer llm)
+anthropic
+diskcache
