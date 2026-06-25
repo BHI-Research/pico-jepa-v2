@@ -102,7 +102,8 @@ evaluation on a protected holdout.
 **0. Download the dataset and build the subsets:**
 
 ```bash
-sh download_k700.sh
+sh k700_2020_downloader.sh
+sh k700_2020_extractor.sh
 python prepare_pretrain_subset.py --k700_dir /dataset/k700-2020/train \
     --num_clusters 10 --videos_per_class 300 --diversity_sample 400
 python prepare_classify_subset.py        # builds the labeled classify CSV
