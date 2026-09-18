@@ -71,6 +71,23 @@
 \setlength{\abovedisplayshortskip}{0pt plus 1pt}
 \setlength{\belowdisplayshortskip}{2pt plus 1pt}
 
+% -- Sin numeracion de paginas -----------------------------------------------
+% El PDF se integra en las actas del congreso junto con otros trabajos, que las
+% renumeran al componer el volumen. Se redefine \ps@headings de llncs.cls
+% (lineas 1217-1225) quitando unicamente \thepage; el \headlineindent se
+% conserva para que el encabezado corriente no cambie de posicion.
+\makeatletter
+\def\ps@headings{\let\@mkboth\@gobbletwo
+   \let\@oddfoot\@empty\let\@evenfoot\@empty
+   \def\@evenhead{\normalfont\small\hspace{\headlineindent}%
+                  \leftmark\hfil}%
+   \def\@oddhead{\normalfont\small\hfil\rightmark\hspace{\headlineindent}}%
+   \def\chaptermark##1{}%
+   \def\sectionmark##1{}%
+   \def\subsectionmark##1{}}
+\pagestyle{headings}
+\makeatother
+
 \hypersetup{
   colorlinks=true,
   linkcolor=black,
@@ -165,7 +182,7 @@ y la de evaluación (Fig.~\ref{fig:eval}).
 \section{Trabajo Relacionado}
 
 \textbf{Aprender de video sin etiquetas.} Las técnicas auto-supervisadas para
-visión se agrupan en tres grandes métodos. Los métodos \emph{contrastivos}
+visión se agrupan en tres grandes familias. Los métodos \emph{contrastivos}
 enseñan al modelo que dos vistas transformadas del mismo contenido deben tener
 representaciones parecidas~\cite{chen2020simple}; BYOL mostró que la idea
 funciona incluso sin ejemplos negativos, apoyándose en un segundo codificador
@@ -322,7 +339,7 @@ recibe una porción distinta de los datos, repartida de forma equilibrada entre
 clases (cada submodelo ve una fracción $1/N$ de los ejemplos de cada clase), y
 se lo hace deliberadamente distinto de los demás mediante mecanismos de
 diversificación: rota el tipo de cabeza (lineal, MLP de dos capas, atencional),
-alterna si el codificador se congela o se ajusta finamente, varia la tasa de
+alterna si el codificador se congela o se ajusta finamente, varía la tasa de
 aprendizaje de la cabeza en $\pm$30\,\%, usa una semilla distinta en cada uno
 ($\text{semilla\_base} + 1000 \cdot i$) y varía la cantidad de épocas en
 $\pm 2$. El primer submodelo conserva la configuración base y actúa como
@@ -427,7 +444,7 @@ etiquetas; la Etapa 2 lo reutiliza en dos ramas que se comparan entre sí: el
 \emph{conjunto} de cuatro submodelos, cada uno entrenado con una porción
 equilibrada por clase y con una cabeza distinta. 
 Las probabilidades de los
-cuatro submodelos alimentan a la combinación.
+cuatro submodelos alimentan la combinación.
 La diferencia de exactitud entre ambas ramas es la brecha $\Delta$, métrica única del trabajo.}
 \label{fig:pipeline}
 \end{figure}
@@ -440,7 +457,7 @@ La diferencia de exactitud entre ambas ramas es la brecha $\Delta$, métrica ún
 conjunto público de reconocimiento de acciones humanas en video. El codificador
 se entrena sin etiquetas sobre 3\,000 videos;
 la clasificación usa 30 clases (1\,467 videos),
-divididas en tres partes: entrenamiento (876),
+divididos en tres partes: entrenamiento (876),
 validación (297) y un \emph{conjunto reservado} de 294 videos que no se toca
 hasta la evaluación final. Al
 evaluar, cada video se predice promediando sobre 10 fragmentos, una práctica
@@ -607,8 +624,8 @@ análisis con cuatro semillas aleatorias distintas. Segundo ---y quizás más
 revelador---, las tres votaciones simples no solo no alcanzan significancia:
 quedan \emph{por debajo} del modelo único en exactitud absoluta. Promediar a
 ciegas las predicciones de submodelos que vieron pocos datos termina
-perjudicando, salvo que un meta-modelo aprenda a distinguir cuándo conviene
-escuchar a cada uno. La diversidad, por sí sola, no alcanza: hay que saber
+perjudicando el resultado, salvo que un meta-modelo aprenda a distinguir
+cuándo conviene escuchar a cada uno. La diversidad, por sí sola, no alcanza: hay que saber
 combinarla.
 
 Dos precisiones estadísticas. Primero, como se evalúan cuatro formas de
@@ -700,26 +717,18 @@ sobre nueve configuraciones, debe leerse como tendencia, no como efecto causal.
   \label{fig:gap_vs_gen}
 \end{figure}
 
-\textbf{Las condiciones para que funcione, en una frase.} Hace falta una red
-base con capacidad suficiente ($d \geq 192$) \emph{y} una cantidad de clases
-suficiente ($C \geq 30$) para que los submodelos desarrollen errores distintos;
-y hace falta el apilamiento para convertir esa diversidad en una mejora
-medible. Ninguna condición alcanza por sí sola.
-
 % -----------------------------------------------------------------------
 \section{Limitaciones}
 
 Cuatro limitaciones acotan el alcance de las conclusiones. Primero, el conjunto
 reservado es chico (294 videos), por lo que los intervalos de cada medición
-individual son anchos; la solidez del resultado descansa en la convergencia de
-varias líneas de evidencia, no en un único test. Segundo, las exactitudes
+individual son anchos. Segundo, las exactitudes
 absolutas son bajas (alrededor del 12\,\% sobre 30 clases, unas 3.6 veces el
 azar): reflejan que el codificador se entrenó con solo 3\,000 videos, unas 670
-veces menos que V-JEPA original ---este trabajo opera deliberadamente en un
-régimen de cómputo y datos muy acotado. Tercero, la diversidad del conjunto se
+veces menos que el V-JEPA original. Tercero, la diversidad del conjunto se
 limita a la cabeza de clasificación: todos los submodelos comparten el mismo
-codificador, porque entrenar varios codificadores excedía el hardware
-disponible. Cuarto, los resultados provienen de un único entrenamiento del
+codificador, porque entrenar varios codificadores excedía la capacidad del
+hardware disponible. Cuarto, los resultados provienen de un único entrenamiento del
 codificador; la única incertidumbre cuantificada es la del bootstrap, y la
 variabilidad por inicialización queda fuera de los intervalos.
 
@@ -744,11 +753,10 @@ diversidad (cabezas distintas), aprender la combinación (apilamiento en lugar
 de votación) y verificar que el problema tenga espacio suficiente (capacidad y
 clases) para que esa diversidad exista.
 
-Como trabajo futuro proponemos: (1) ampliar el conjunto de entrenamiento sin
-etiquetas para mejorar la calidad del codificador, lo que liberaría el techo de
-la clasificación; (2) caracterizar cómo cambia la brecha entre 10 y 30 clases,
-para ubicar el punto donde nace la ventaja; y (3) hacer lo mismo variando la
-dimensión $d$ de la red base.
+Como trabajo futuro proponemos ampliar el conjunto de entrenamiento sin
+etiquetas, lo que liberaría el techo de la clasificación, y ubicar el punto
+donde nace la ventaja caracterizando cómo cambia la brecha al variar la
+cantidad de clases entre 10 y 30 y la dimensión $d$ de la red base.
 
 % -----------------------------------------------------------------------
 \bibliographystyle{splncs04}
