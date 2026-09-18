@@ -290,15 +290,7 @@ ViT-Small canónico de $d{=}384$).
        {EMA (sin gradiente)} (ftg.north);
 
 \end{tikzpicture}}
-\caption{Funcionamiento del modelo (primera etapa, auto-supervisada). El clip se
-divide en parches espacio-temporales; el codificador en línea $f_\theta$ ve solo
-el 20\,\% visible y el predictor $g_\phi$ debe anticipar la representación del
-80\,\% oculto. El codificador objetivo $f_{\bar\theta}$ no recibe gradiente
-(\emph{stop-gradient}, $\mathrm{sg}[\cdot]$): sus pesos son un promedio móvil
-exponencial de los de $f_\theta$,
-$\bar\theta \leftarrow \tau\bar\theta + (1{-}\tau)\theta$, con $\tau$ siguiendo
-un esquema cosenoidal de $0.996$ a $0.9999$. Sin este mecanismo ambos
-codificadores colapsarían a una representación trivial.}
+\caption{Funcionamiento del modelo (primera etapa, auto-supervisada).}
 \label{fig:jepa}
 \end{figure}
 
@@ -399,7 +391,9 @@ conjunto y el modelo único.
        {además: lr $\pm$30\,\%, semilla y épocas distintas};
 
   \node[agg, minimum width=26mm, minimum height=13mm] (stack) at (14.0,-5.65)
-       {\textbf{Apilamiento}\\meta-modelo\\(regresión logística)};
+       {\textbf{Combinación}
+       	%\\meta-modelo\\(regresión logística)
+       	};
 
   \draw[ar] (lab.north) |- (gral.west);
   \draw[ar] (lab) -- (split);
@@ -431,9 +425,10 @@ conjunto y el modelo único.
 etiquetas; la Etapa 2 lo reutiliza en dos ramas que se comparan entre sí: el
 \emph{modelo único}, entrenado con todos los datos etiquetados, y el
 \emph{conjunto} de cuatro submodelos, cada uno entrenado con una porción
-equilibrada por clase y con una cabeza distinta. Las probabilidades de los
-cuatro submodelos alimentan el meta-modelo de apilamiento. La diferencia de
-exactitud entre ambas ramas es la brecha $\Delta$, métrica única del trabajo.}
+equilibrada por clase y con una cabeza distinta. 
+Las probabilidades de los
+cuatro submodelos alimentan a la combinación.
+La diferencia de exactitud entre ambas ramas es la brecha $\Delta$, métrica única del trabajo.}
 \label{fig:pipeline}
 \end{figure}
 
@@ -519,7 +514,7 @@ cero, y \textbf{RECHAZADO} si la brecha no es positiva.
 
 \end{tikzpicture}}
 \caption{Metodología de evaluación. La triple partición se genera una sola vez
-con semilla 1337 y el conjunto reservado permanece intocado durante toda la
+con semilla 1337 y el conjunto reservado permanece inalterado durante toda la
 búsqueda de configuraciones: solo se accede a él en la medición final. La
 métrica oficial ---la brecha $\Delta$--- y su intervalo de confianza por
 bootstrap determinan uno de los tres veredictos, fijados de antemano.}
@@ -552,23 +547,14 @@ resultaron positivas, con un promedio de $+2.53$\,pp
 positivos seguidos sería tan improbable como sacar nueve caras seguidas con
 una moneda ($0.5^9 \approx 0.002$).
 
+
 \begin{figure}[t]
-\begin{minipage}[t]{0.49\linewidth}
   \centering
   \includegraphics[width=\linewidth]{fig1_phase4_timeline.png}
   \caption{Las nueve mediciones de la brecha a lo largo del recorrido de
   búsqueda, con sus intervalos de confianza del 95\,\% (bootstrap). Todas son
   positivas; debajo de cada barra, la exactitud del modelo único en ese punto.}
   \label{fig:timeline}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.49\linewidth}
-  \centering
-  \includegraphics[width=\linewidth]{fig2_aggregations.png}
-  \caption{Exactitud del conjunto según la forma de combinar predicciones. La
-  línea punteada marca la exactitud del modelo único (6.80\,\%). Solo el
-  apilamiento (stacking) lo supera con significancia formal.}
-  \label{fig:aggregations}
-\end{minipage}
 \end{figure}
 
 Conviene ser precisos sobre qué prueba esto y qué no. Las nueve mediciones
@@ -588,7 +574,7 @@ Fig.~\ref{fig:aggregations} muestran el resultado.
 \begin{table}[h]
 \centering
 \caption{Comparación de formas de combinar predicciones (4 submodelos
-heterogéneos; exactitud del modelo único: 6.80\,\%).}
+	heterogéneos; exactitud del modelo único: 6.80\,\%).}
 \label{tab:aggregations}
 \begin{tabular}{lcccc}
 \toprule
@@ -600,8 +586,19 @@ Votación dura            & 8.84\,\%           & $+2.04$\,pp          & $-1.70$ 
 Votación blanda          & 8.50\,\%           & $+1.70$\,pp          & $-2.04$ & INCONCLUSO \\
 Votación ponderada       & 7.48\,\%           & $+0.68$\,pp          & $-2.72$ & INCONCLUSO \\
 \bottomrule
+
 \end{tabular}
+
 \end{table}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{fig2_aggregations.png}
+	\caption{Exactitud del conjunto según la forma de combinar predicciones. La
+		línea punteada marca la exactitud del modelo único (6.80\,\%). Solo el
+		apilamiento (stacking) lo supera con significancia formal.}
+	\label{fig:aggregations}
+\end{figure}
 
 El aprendizaje es doble. Primero, el apilamiento es la única estrategia cuyo
 intervalo de confianza excluye el cero: el conjunto supera al modelo único por
@@ -696,7 +693,7 @@ sobre nueve configuraciones, debe leerse como tendencia, no como efecto causal.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.55\linewidth]{fig3_gap_vs_general.png}
+  \includegraphics[width=0.80\linewidth]{fig3_gap_vs_general.png}
   \caption{La brecha se achica a medida que el modelo único mejora. Cada punto
   es una medición del recorrido de búsqueda (pendiente $\approx -0.69$,
   $R^2 \approx 0.80$).}
@@ -756,7 +753,7 @@ dimensión $d$ de la red base.
 % -----------------------------------------------------------------------
 \bibliographystyle{splncs04}
 {\footnotesize
-\begin{multicols}{2}
+%\begin{multicols}{2}
 \begin{thebibliography}{10}
 \scriptsize
 
@@ -869,7 +866,7 @@ A.~Karpathy,
 \url{https://github.com/karpathy/autoresearch}, 2025.
 
 \end{thebibliography}
-\end{multicols}
+%\end{multicols}
 }
 
 \end{document}
