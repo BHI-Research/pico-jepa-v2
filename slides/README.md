@@ -38,8 +38,6 @@ To pick up a newer theme release: `rm -rf .custom-beamer` and build again.
 
 ## Before presenting
 
-- Set `\date{}` (commented out in the preamble) — otherwise the title slide
-  falls back to `\today`.
 - Each frame has a `% ~m:ss` time budget and a `\note{}` for the speaker.
   To show notes on a second screen, uncomment the two `pgfpages` /
   `\setbeameroption` lines in the preamble.

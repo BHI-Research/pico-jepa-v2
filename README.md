@@ -16,7 +16,27 @@ protected holdout.
 
 ## Publication
 
-This work builds on our previous publication; if you use this code, please cite:
+This work is presented at **CACIC 2026** — the XXXII Congreso Argentino de
+Ciencias de la Computación, organized by [RedUNCI](https://redunci.info.unlp.edu.ar/)
+and hosted by UTN Facultad Regional Concepción del Uruguay (Entre Ríos,
+Argentina), [5–9 October 2026](https://www.frcu.utn.edu.ar/index.php/cacic-2026).
+If you use this code, please cite:
+
+```bibtex
+@inproceedings{rostagno2026picov2,
+  title     = {pico-JEPA v2: ¿Cuándo Superan Muchos Modelos Pequeños a Uno Grande?},
+  author    = {Rostagno, Adrián and Iparraguirre, Javier and Briatore, Roberto and González, Agustín and Aggio, Santiago},
+  booktitle = {XXXII Congreso Argentino de Ciencias de la Computación (CACIC)},
+  year      = {2026},
+  address   = {Concepción del Uruguay, Entre Ríos, Argentina},
+  month     = {October}
+}
+```
+
+The manuscript lives under [paper/](paper/) and the conference talk under
+[slides/](slides/).
+
+It builds on our previous publication:
 
 ```bibtex
 @inproceedings{rostagno2025pico,
@@ -28,9 +48,6 @@ This work builds on our previous publication; if you use this code, please cite:
   month     = {October}
 }
 ```
-
-The v2 manuscript (*pico-JEPA v2: ¿Cuándo Superan Muchos Modelos Pequeños a Uno
-Grande?*) lives under [paper/](paper/).
 
 ## Project Structure
 
