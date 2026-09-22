@@ -1,17 +1,19 @@
 % ===========================================================================
 %  pico-JEPA v2 --- presentacion para congreso (15 minutos)
 %
-%  Tema: UTN-BHI (https://github.com/javierip/custom-beamer). No se versiona
-%  aqui: compile.sh lo clona y deja beamerthemeUTN-BHI.sty y theme/ junto a
-%  este archivo (ambos en .gitignore). Formato 4:3, como el original: el
-%  fondo institucional reserva la franja inferior para el logotipo.
+%  Tema: UTN-BHI v2.0.0 (https://github.com/javierip/custom-beamer). No se
+%  versiona ni se copia aqui: compile.sh lo clona en .custom-beamer/ y lo usa
+%  desde ahi, via TEXINPUTS y \utnbhiassetpath. El tema dibuja el isologotipo
+%  en la linea de pie y le descuenta la altura a \textheight, asi que NO hay
+%  que redefinir footline ni reservar espacio a mano.
 %
-%  Presupuesto de tiempo: 13 min de exposicion + 2 min de preguntas.
+%  Presupuesto: ~13:30 de exposicion contando las tres portadillas de
+%  seccion, sobre un turno de 15 minutos; el resto queda para preguntas.
 %  Cada diapositiva lleva un comentario con el tiempo previsto y una nota
 %  para el orador (\note). Para verlas durante la charla, descomentar la
 %  linea \setbeameroption de mas abajo y usar un proyector con dos pantallas.
 % ===========================================================================
-\documentclass[10pt]{beamer}
+\documentclass[aspectratio=169,10pt]{beamer}
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -24,28 +26,19 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning, fit, backgrounds, calc}
 
+% El tema se usa desde el clon, sin copiar nada: compile.sh pone
+% .custom-beamer/ en TEXINPUTS para que se encuentre el .sty, y esta linea
+% ---que va antes de \usetheme--- le indica donde estan sus imagenes.
+\providecommand{\utnbhiassetpath}{.custom-beamer/theme/}
 \usetheme{UTN-BHI}
 
-% Las figuras se toman del directorio del articulo: una sola copia de cada
-% imagen en el repositorio. El segundo path permite tambien dejarlas aqui.
+% Las figuras del articulo: una sola copia de cada imagen en el repositorio.
+% {./} tiene que estar para que el tema encuentre su propio isologotipo.
 \graphicspath{{../paper/}{./figs/}{./}}
 
-% El fondo institucional lleva el logotipo abajo y al centro. Una linea de
-% pie vacia pero con altura le reserva esa franja al area de texto, para que
-% ninguna diapositiva escriba encima.
-\setbeamertemplate{footline}{\vspace{11mm}}
-
-% El tema define el verde y el gris institucionales. Para el enfasis en
-% cuerpo de texto hace falta una version mas oscura del verde: el original
-% es muy claro sobre blanco.
-\definecolor{greenUTNdark}{rgb}{0.42,0.44,0.0}
-\setbeamercolor{alerted text}{fg=greenUTNdark}
-\setbeamercolor{block title}{fg=white, bg=grayUTN}
-\setbeamercolor{block body}{fg=grayUTN, bg=grayUTN!10}
-\setbeamercolor{block title alerted}{fg=white, bg=greenUTNdark}
-\setbeamercolor{block body alerted}{fg=grayUTN, bg=greenUTN!15}
-\setbeamerfont{block title}{size=\small}
-\setbeamerfont{frametitle}{size=\large, series=\bfseries}
+% Nada de colores ni de footline aqui: desde v2.0.0 el tema trae su paleta
+% completa (alerted text, bloques, epigrafes) verificada contra WCAG, y
+% dibuja el isologotipo reservando su espacio.
 
 % Diapositiva de seccion, como en la plantilla original.
 \AtBeginSection[]{
@@ -95,15 +88,17 @@
 
 \begin{document}
 
-% == Portada ============================================== ~0:30 ==========
-\begin{frame}[plain]
+% == Portada ============================================== ~0:25 ==========
+% Sin [plain]: desde v2.0.0 el isologotipo vive en la linea de pie, y [plain]
+% la suprime.
+\begin{frame}
   \titlepage
 \end{frame}
 \note{Presentarse y enunciar la pregunta en una frase: con un presupuesto
 fijo, ¿un modelo grande o varios chicos? Anticipar que la respuesta es
 «depende», y que el aporte es decir de qué depende.}
 
-% == 1. El problema ======================================= ~1:15 ==========
+% == 1. El problema ======================================= ~0:55 ==========
 \begin{frame}{Entender video sin etiquetas, en una PC de escritorio}
   \begin{itemize}
     \item Etiquetar video a mano es caro y lento.
@@ -127,7 +122,7 @@ fijo, ¿un modelo grande o varios chicos? Anticipar que la respuesta es
 condicionado por esa restricción, y es lo que hace interesante la pregunta
 del reparto de datos.}
 
-% == 2. De la v1 a la v2 ================================== ~1:15 ==========
+% == 2. De la v1 a la v2 ================================== ~0:55 ==========
 \begin{frame}{De la v1 a la v2: de «funciona» a «cuándo funciona»}
   \small
   \textbf{pico-JEPA v1} (CACIC 2025): viabilidad en hardware de escritorio,
@@ -159,11 +154,36 @@ del reparto de datos.}
 \note{Esta es la bisagra de la charla: el aporte no es un número, es un mapa
 de condiciones. Si hay que recortar tiempo, recortar después, no acá.}
 
+% == 3. Donde se apoya este trabajo ======================= ~0:45 ==========
+\begin{frame}{Dónde se apoya este trabajo}
+  \small
+  \begin{itemize}
+    \item \textbf{Video sin etiquetas:} métodos contrastivos, BYOL ---de donde
+          viene el codificador objetivo por promedio móvil--- y reconstrucción
+          enmascarada (MAE, VideoMAE). Adoptamos la formulación de
+          \alert{V-JEPA}: predecir \emph{representaciones} evita el
+          decodificador de pixeles, decisivo con poco cómputo.
+    \item \textbf{Conjuntos de modelos:} la diversidad puede venir de la
+          inicialización, del reparto de datos o de la arquitectura. Para
+          combinarlos, la \alert{generalización apilada} de Wolpert (1992) ya
+          proponía que un segundo modelo \emph{aprenda} de las predicciones de
+          los primeros.
+    \item \textbf{Mezclas de expertos} (Jacobs, 1991): aquí el reparto es
+          \alert{explícito y equilibrado}, sin compuerta que aprender ni costo
+          de enrutamiento.
+    \item \textbf{Experimentación automatizada:} AutoML y las herramientas
+          recientes de prueba automatizada de hipótesis.
+  \end{itemize}
+\end{frame}
+\note{Cuarenta segundos, no más: ubicar el trabajo y seguir. Lo que no puede
+faltar es por qué V-JEPA y no MAE ---no hay decodificador de pixeles--- y que
+el apilamiento no es una idea nuestra, es de 1992.}
+
 % ===========================================================================
 \section{Cómo funciona}
 % ===========================================================================
 
-% == 3. Etapa 1 =========================================== ~1:45 ==========
+% == 4. Etapa 1 =========================================== ~1:15 ==========
 \begin{frame}{Etapa 1: aprender a representar, sin etiquetas}
   \centering
   \resizebox{\linewidth}{!}{%
@@ -204,7 +224,7 @@ de condiciones. Si hay que recortar tiempo, recortar después, no acá.}
   \end{tikzpicture}}
 
   \vfill
-  {\footnotesize
+  {\small
   \begin{itemize}
     \item Se muestra el \alert{20\,\%} de los parches y se predice el
           \alert{80\,\%} oculto.
@@ -218,7 +238,7 @@ de condiciones. Si hay que recortar tiempo, recortar después, no acá.}
 punto que no puede faltar: la pérdida se calcula entre representaciones, no
 entre pixeles, y el stop-gradient es lo que evita el colapso.}
 
-% == 4. Etapa 2 y el conjunto ============================= ~1:30 ==========
+% == 5. Etapa 2 y el conjunto ============================= ~1:00 ==========
 \begin{frame}{Etapa 2: clasificar, y el conjunto de cuatro submodelos}
   \small
   \begin{columns}[T, onlytextwidth]
@@ -255,7 +275,7 @@ entre pixeles, y el stop-gradient es lo que evita el colapso.}
 codificador: la diversidad vive en la cabeza. Es también una limitación, y
 se retoma al final.}
 
-% == 5. Formas de combinar ================================ ~1:00 ==========
+% == 6. Formas de combinar ================================ ~0:45 ==========
 \begin{frame}{Cuatro maneras de combinar las predicciones}
   \small
   \begin{enumerate}
@@ -283,9 +303,9 @@ respuesta a una pregunta, no como una lista de números.}
 \section{Evaluación y resultados}
 % ===========================================================================
 
-% == 6. Configuracion y metrica =========================== ~1:30 ==========
+% == 7. Configuracion y metrica =========================== ~1:00 ==========
 \begin{frame}{Configuración y protocolo de medición}
-  \footnotesize
+  \small
   \begin{columns}[T, onlytextwidth]
     \begin{column}{0.48\textwidth}
       \textbf{Datos y cómputo}
@@ -326,13 +346,13 @@ respuesta a una pregunta, no como una lista de números.}
 de mirar los datos, y el holdout se toca una sola vez. Es lo que da valor a
 los números que siguen.}
 
-% == 7. Nueve de nueve ==================================== ~1:15 ==========
+% == 8. Nueve de nueve ==================================== ~0:50 ==========
 \begin{frame}{Una señal consistente: nueve mediciones, nueve positivas}
   \centering
-  \includegraphics[width=0.88\linewidth]{fig1_phase4_timeline.png}
+  \includegraphics[width=0.60\linewidth]{fig1_phase4_timeline.png}
 
   \vfill
-  {\footnotesize
+  {\small
   \begin{itemize}
     \item La exploración la condujo un \alert{bucle de experimentación
           automatizada}, con la métrica fijada de antemano.
@@ -347,10 +367,10 @@ los números que siguen.}
 formal; la prueba viene en la próxima diapositiva»). Es lo que un revisor
 va a preguntar.}
 
-% == 8. Resultado central ================================= ~1:30 ==========
+% == 9. Resultado central ================================= ~1:05 ==========
 \begin{frame}{El resultado central: solo el apilamiento gana}
   \centering
-  \footnotesize
+  \small
   \begin{tabular}{lcccc}
     \toprule
     \textbf{Combinación} & \textbf{Exactitud} & \textbf{Brecha}
@@ -379,13 +399,13 @@ va a preguntar.}
 contraintuitivo, y el que más se comenta después, es que las votaciones
 pierden contra el modelo único.}
 
-% == 9. Lectura del resultado ============================= ~1:15 ==========
+% == 10. Lectura del resultado ============================ ~0:55 ==========
 \begin{frame}{La diversidad no alcanza: hay que aprender a combinarla}
   \centering
-  \includegraphics[width=0.78\linewidth]{fig2_aggregations.png}
+  \includegraphics[width=0.55\linewidth]{fig2_aggregations.png}
 
   \vfill
-  {\footnotesize
+  {\small
   \begin{itemize}
     \item Promediar a ciegas las predicciones de submodelos que vieron pocos
           datos \alert{perjudica el resultado}, salvo que un meta-modelo
@@ -405,10 +425,10 @@ nueve mediciones y los dos experimentos controlados.}
 \section{Los límites de la ventaja}
 % ===========================================================================
 
-% == 10. Cuando no funciona =============================== ~1:30 ==========
+% == 11. Cuando no funciona =============================== ~1:05 ==========
 \begin{frame}{¿Cuándo no funciona? Dos experimentos controlados}
   \centering
-  \footnotesize
+  \small
   \begin{tabular}{lcccc}
     \toprule
     \textbf{Variante} & $d$ & Clases & $\Delta$ & \textbf{Veredicto} \\
@@ -422,33 +442,37 @@ nueve mediciones y los dos experimentos controlados.}
 
   \vfill
   \raggedright
-  {\footnotesize
+  {\small
   \begin{itemize}
     \item \textbf{Menor capacidad:} el modelo único incluso mejora
           (11.6\,\%), pero la brecha cae exactamente a cero, con un IC
           degenerado $[-0.04,\,+0.04]$.
     \item \textbf{Pocas clases:} concentrar los datos fortalece al modelo
           único (22.5\,\%) y la brecha se vuelve negativa.
+    \item \textbf{Cabezas iguales:} en una versión homogénea previa el
+          meta-modelo solo podía repetir el consenso, y la brecha también se
+          desvanecía ($\approx 0$). El apilamiento sin diversidad no alcanza.
   \end{itemize}}
 
   \vfill
   \begin{block}{}
-    Mismo mecanismo en los dos casos: sin capacidad o sin variedad de
-    clases, los submodelos \alert{convergen a la misma solución} y no queda
-    diversidad que combinar.
+    Mismo mecanismo en los tres casos: cualquier factor que empuje a los
+    submodelos \alert{hacia la misma solución} ---poca capacidad, pocas
+    clases, cabezas iguales--- anula la ventaja, por más que el apilamiento
+    intente explotarla.
   \end{block}
 \end{frame}
 \note{Este es, para nosotros, el aporte más útil del trabajo: publicar
 también las condiciones en las que la idea falla. Decirlo con esas palabras.}
 
-% == 11. Brecha vs. modelo unico ========================== ~1:00 ==========
+% == 12. Brecha vs. modelo unico ========================== ~0:40 ==========
 \begin{frame}{La ventaja se achica cuando el modelo único mejora}
   \centering
-  \includegraphics[width=0.78\linewidth]{fig3_gap_vs_general.png}
+  \includegraphics[width=0.58\linewidth]{fig3_gap_vs_general.png}
 
   \vfill
   \raggedright
-  {\footnotesize
+  {\small
   \begin{itemize}
     \item A lo largo de las nueve mediciones la brecha se reduce a medida
           que el modelo único mejora
@@ -463,7 +487,7 @@ también las condiciones en las que la idea falla. Decirlo con esas palabras.}
 \note{Si se va el tiempo, esta es la diapositiva a acortar: basta con la
 pendiente negativa y la advertencia de que es observacional.}
 
-% == 12. Limitaciones ===================================== ~1:00 ==========
+% == 13. Limitaciones ===================================== ~0:40 ==========
 \begin{frame}{Limitaciones}
   \small
   \begin{enumerate}
@@ -484,7 +508,7 @@ pendiente negativa y la advertencia de que es observacional.}
 \note{No leerlas todas: mencionar la 1 y la 3, que son las que suelen
 preguntar, y dejar las otras en pantalla.}
 
-% == 13. Conclusiones ===================================== ~1:15 ==========
+% == 14. Conclusiones ===================================== ~0:50 ==========
 \begin{frame}{Conclusiones}
   \small
   \begin{itemize}
@@ -511,7 +535,7 @@ preguntar, y dejar las otras en pantalla.}
 \note{Cerrar con la frase «puede ganar, pero no gratis». Es la que conviene
 que se lleven.}
 
-% == Cierre =============================================== ~0:15 ==========
+% == Cierre =============================================== ~0:10 ==========
 \begin{frame}
   \begin{center}
     \begin{beamercolorbox}[sep=8pt,center]{title}
@@ -522,6 +546,69 @@ que se lleven.}
     \vspace{1.5em}
     \small{\url{https://github.com/BHI-Research/pico-jepa-v2}}
   \end{center}
+\end{frame}
+
+% == Respaldo (no se presentan) =============================================
+% Fuera del recorrido: material para responder preguntas.
+\appendix
+
+\begin{frame}{Respaldo: el objetivo de la etapa 1}
+  La pérdida es el error cuadrático medio entre lo predicho y la
+  representación objetivo, sobre el conjunto $\mathcal{T}$ de parches ocultos:
+  \[
+    \mathcal{L} = \frac{1}{|\mathcal{T}|}\sum_{i \in \mathcal{T}}
+    \bigl\|\hat{z}_i - \mathrm{sg}\!\left[f_{\bar\theta}(\mathbf{v})_i\right]\bigr\|_2^2
+  \]
+  \small
+  \begin{itemize}
+    \item $\mathbf{v} \in \mathbb{R}^{C \times T \times H \times W}$ es el clip.
+    \item $\mathrm{sg}[\cdot]$: el codificador objetivo no recibe gradiente.
+          Sin eso, ambos codificadores colapsan a una representación trivial
+          y constante.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Respaldo: hiperparámetros y hardware}
+  \small
+  \begin{columns}[T, onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \textbf{Pre-entrenamiento}
+      \begin{itemize}
+        \item 20 épocas; fracción oculta $0.80$ con ocultamiento multibloque
+              (3 bloques).
+        \item Promedio móvil $\tau \in [0.996,\, 0.9999]$; decaimiento por
+              capa $0.9$.
+        \item Clips $8{\times}224{\times}224$, parches
+              $2{\times}16{\times}16$, 784 por clip.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Clasificación}
+      \begin{itemize}
+        \item Codificador congelado o con ajuste fino:
+              $\text{lr}_{\text{cod}} = 3{\times}10^{-5}$,
+              $\text{lr}_{\text{cabeza}} = 5{\times}10^{-4}$.
+        \item ViT: $d{=}192$, profundidad 8, 8 cabezas de atención,
+              3.4\,M de parámetros.
+        \item Intel Core i7, 65\,GB de RAM, NVIDIA GTX 1060 de 6\,GB.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Respaldo: datos, particiones y protocolo}
+  \small
+  \begin{itemize}
+    \item Kinetics-700-2020. Pre-entrenamiento sin etiquetas: 3\,000 videos.
+    \item Clasificación: 30 clases, 1\,467 videos $\rightarrow$
+          entrenamiento 876 / validación 297 / \alert{reservado 294}.
+    \item Partición triple \alert{fija}, generada una sola vez con semilla
+          1337; el conjunto reservado solo se toca en la medición final.
+    \item Evaluación final, una sola vez: 10 fragmentos por video,
+          probabilidades promediadas.
+    \item Bootstrap de $10\,000$ remuestreos $\Rightarrow$ IC del 95\,\%;
+          robustez con las semillas $\{1337, 42, 7, 2024\}$.
+  \end{itemize}
 \end{frame}
 
 \end{document}
