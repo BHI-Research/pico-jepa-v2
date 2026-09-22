@@ -1,23 +1,14 @@
 """
 prepare_pretrain_subset.py
 
-Cura automáticamente un subconjunto mínimo y diverso del dataset K700-2020
-para el pre-entrenamiento JEPA.
+Distills a small, concept-diverse and motion-rich subset of K700-2020 for JEPA
+pre-training, writing a CSV that VideoDataset can consume directly.
 
-Inspirado en karpathy/autoresearch: selección basada en métricas para encontrar
-el mínimo conjunto efectivo de datos en lugar de usar todo el corpus.
+Pipeline: cluster class names (TF-IDF + K-Means) and keep one representative
+class per cluster, then score each class's clips by temporal variance (motion
+proxy) and keep the most dynamic ones.
 
-Flujo:
-  1. Agrupa las N clases disponibles en `num_clusters` clusters semánticos
-     usando TF-IDF + K-Means sobre los nombres de clase.
-  2. Elige 1 clase representativa por cluster (más cercana al centroide).
-  3. Para cada clase elegida, puntúa los videos por varianza temporal
-     (proxy de movimiento/dinamismo) decodificando 3 frames por video.
-  4. Selecciona los `videos_per_class` videos más dinámicos por clase.
-  5. Escribe el CSV de salida en el formato esperado por VideoDataset
-     (sin header, columna única: clase/video.mp4).
-
-Uso:
+Usage:
     python prepare_pretrain_subset.py \\
         --k700_dir /dataset/K700-2020/train \\
         --output_csv pretrain_subset.csv \\
@@ -38,52 +29,52 @@ import torch
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Curación de datos para pre-entrenamiento JEPA")
+    parser = argparse.ArgumentParser(description="Data curation for JEPA pre-training")
     parser.add_argument(
         "--k700_dir",
         type=str,
         required=True,
-        help="Ruta al directorio train del dataset K700-2020 (contiene subdirectorios por clase)",
+        help="Path to the K700-2020 dataset train directory (contains per-class subdirectories)",
     )
     parser.add_argument(
         "--output_csv",
         type=str,
         default="pretrain_subset.csv",
-        help="Nombre del CSV de salida (se guarda dentro de k700_dir). Default: pretrain_subset.csv",
+        help="Output CSV name (saved inside k700_dir). Default: pretrain_subset.csv",
     )
     parser.add_argument(
         "--num_clusters",
         type=int,
         default=30,
-        help="Número de clusters semánticos (≈ número de clases seleccionadas). Default: 30",
+        help="Number of semantic clusters (≈ number of selected classes). Default: 30",
     )
     parser.add_argument(
         "--videos_per_class",
         type=int,
         default=100,
-        help="Máximo de videos a incluir por clase seleccionada. Default: 100",
+        help="Maximum number of videos to include per selected class. Default: 100",
     )
     parser.add_argument(
         "--diversity_sample",
         type=int,
         default=200,
-        help="Cuántos videos muestrear por clase para el scoring de diversidad. Default: 200",
+        help="How many videos to sample per class for diversity scoring. Default: 200",
     )
     parser.add_argument(
         "--seed",
         type=int,
         default=42,
-        help="Semilla aleatoria para reproducibilidad. Default: 42",
+        help="Random seed for reproducibility. Default: 42",
     )
     return parser.parse_args()
 
 
 # ---------------------------------------------------------------------------
-# Paso 1: Descubrir clases disponibles en el directorio
+# Step 1: Discover available classes in the directory
 # ---------------------------------------------------------------------------
 
 def discover_classes(k700_dir: str) -> list[str]:
-    """Devuelve la lista de clases (subdirectorios con al menos 1 .mp4)."""
+    """Returns the list of classes (subdirectories with at least 1 .mp4)."""
     base = Path(k700_dir)
     classes = sorted(
         d.name
@@ -94,19 +85,19 @@ def discover_classes(k700_dir: str) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# Paso 2: Agrupamiento semántico con TF-IDF + K-Means
+# Step 2: Semantic clustering with TF-IDF + K-Means
 # ---------------------------------------------------------------------------
 
 def cluster_classes(class_names: list[str], num_clusters: int, seed: int) -> dict[int, list[str]]:
     """
-    Agrupa los nombres de clase usando TF-IDF sobre palabras y K-Means.
-    Devuelve dict {cluster_id: [class_name, ...]}.
+    Groups the class names using word-level TF-IDF and K-Means.
+    Returns dict {cluster_id: [class_name, ...]}.
     """
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.cluster import KMeans
 
-    # Representar cada nombre de clase como bolsa de palabras TF-IDF
-    # (los nombres ya están en inglés con espacios/underscores separando palabras)
+    # Represent each class name as a TF-IDF bag of words
+    # (the names are already in English with spaces/underscores separating words)
     normalized = [name.replace("_", " ").lower() for name in class_names]
     vectorizer = TfidfVectorizer(
         analyzer="word",
@@ -134,7 +125,7 @@ def select_representative_per_cluster(
     X,
 ) -> list[str]:
     """
-    Para cada cluster, elige la clase más cercana al centroide.
+    For each cluster, picks the class closest to the centroid.
     """
     from sklearn.metrics.pairwise import euclidean_distances
 
@@ -155,13 +146,13 @@ def select_representative_per_cluster(
 
 
 # ---------------------------------------------------------------------------
-# Paso 3: Scoring de diversidad visual de videos
+# Step 3: Visual diversity scoring of videos
 # ---------------------------------------------------------------------------
 
 def score_video_diversity(video_path: str) -> float:
     """
-    Decodifica 3 frames (inicio, medio, fin) y calcula la varianza temporal
-    como proxy de movimiento/dinamismo. Retorna -1.0 en caso de error.
+    Decodes 3 frames (start, middle, end) and computes the temporal variance
+    as a proxy for motion/dynamism. Returns -1.0 on error.
     """
     try:
         import torchcodec.decoders as decoders
@@ -174,15 +165,15 @@ def score_video_diversity(video_path: str) -> float:
         indices = [
             0,
             total_frames // 2,
-            min(total_frames - 1, total_frames - 1),
+            total_frames - 1,
         ]
-        # Quitar duplicados si el video es muy corto
+        # Remove duplicates if the video is very short
         indices = sorted(set(indices))
 
         frames_data = decoder.get_frames_at(indices).data  # (T, C, H, W) uint8
-        frames_float = frames_data.float() / 255.0  # normalizar a [0, 1]
+        frames_float = frames_data.float() / 255.0  # normalize to [0, 1]
 
-        # Varianza entre frames: mide cuánto cambia la imagen a lo largo del tiempo
+        # Variance across frames: measures how much the image changes over time
         variance = float(torch.var(frames_float, dim=0).mean())
         return variance
 
@@ -198,9 +189,9 @@ def select_diverse_videos(
     seed: int,
 ) -> list[str]:
     """
-    Lista los .mp4 de la clase, puntúa hasta `diversity_sample` por varianza
-    temporal y devuelve los mejores `videos_per_class` como rutas relativas
-    (clase/video.mp4).
+    Lists the class's .mp4 files, scores up to `diversity_sample` of them by
+    temporal variance and returns the best `videos_per_class` as relative paths
+    (class/video.mp4).
     """
     class_dir = Path(k700_dir) / class_name
     all_videos = sorted(class_dir.glob("*.mp4"))
@@ -208,11 +199,11 @@ def select_diverse_videos(
     if not all_videos:
         return []
 
-    # Muestrear para scoring (eficiencia)
+    # Sample for scoring (efficiency)
     rng = random.Random(seed)
     candidates = all_videos if len(all_videos) <= diversity_sample else rng.sample(all_videos, diversity_sample)
 
-    # Puntuar
+    # Score
     scored = []
     for vp in candidates:
         score = score_video_diversity(str(vp))
@@ -220,11 +211,11 @@ def select_diverse_videos(
             scored.append((score, vp))
 
     if not scored:
-        # Fallback: tomar los primeros videos sin scoring
+        # Fallback: take the first videos without scoring
         fallback = all_videos[:videos_per_class]
         return [f"{class_name}/{v.name}" for v in fallback]
 
-    # Ordenar descendente por varianza y tomar top-K
+    # Sort descending by variance and take top-K
     scored.sort(key=lambda x: x[0], reverse=True)
     top_videos = scored[:videos_per_class]
 
@@ -242,30 +233,30 @@ def main():
 
     k700_dir = args.k700_dir
     if not os.path.isdir(k700_dir):
-        print(f"ERROR: No se encontró el directorio: {k700_dir}")
+        print(f"ERROR: directory not found: {k700_dir}")
         sys.exit(1)
 
-    # --- Paso 1: Descubrir clases ---
-    print(f"\n[1/4] Escaneando clases en: {k700_dir}")
+    # --- Step 1: Discover classes ---
+    print(f"\n[1/4] Scanning classes in: {k700_dir}")
     class_names = discover_classes(k700_dir)
-    print(f"      Clases encontradas: {len(class_names)}")
+    print(f"      Classes found: {len(class_names)}")
 
     if len(class_names) == 0:
-        print("ERROR: No se encontraron subdirectorios con videos .mp4.")
+        print("ERROR: No subdirectories with .mp4 videos found.")
         sys.exit(1)
 
-    # --- Paso 2: Clustering semántico ---
+    # --- Step 2: Semantic clustering ---
     num_clusters = min(args.num_clusters, len(class_names))
-    print(f"\n[2/4] Agrupando {len(class_names)} clases en {num_clusters} clusters semánticos (TF-IDF + K-Means)...")
+    print(f"\n[2/4] Grouping {len(class_names)} classes into {num_clusters} semantic clusters (TF-IDF + K-Means)...")
     clusters, km, vectorizer, X = cluster_classes(class_names, num_clusters, args.seed)
     selected_classes = select_representative_per_cluster(clusters, class_names, km, X)
-    print(f"      Clases seleccionadas ({len(selected_classes)}):")
+    print(f"      Selected classes ({len(selected_classes)}):")
     for i, cls in enumerate(selected_classes, 1):
         print(f"        {i:2d}. {cls}")
 
-    # --- Paso 3: Scoring de diversidad visual ---
-    print(f"\n[3/4] Seleccionando los {args.videos_per_class} videos más dinámicos por clase")
-    print(f"      (muestreando hasta {args.diversity_sample} videos por clase para scoring)...")
+    # --- Step 3: Visual diversity scoring ---
+    print(f"\n[3/4] Selecting the {args.videos_per_class} most dynamic videos per class")
+    print(f"      (sampling up to {args.diversity_sample} videos per class for scoring)...")
 
     all_video_paths: list[str] = []
     for i, cls in enumerate(selected_classes, 1):
@@ -280,22 +271,22 @@ def main():
         all_video_paths.extend(videos)
         print(f"{len(videos)} videos")
 
-    # --- Paso 4: Escribir CSV ---
-    # Se usa csv.writer con QUOTE_ALL para que las rutas con espacios o
-    # paréntesis (ej. "acting in play/abc.mp4", "backflip (human)/xyz.mp4")
-    # queden siempre entre comillas y pandas las lea sin ambigüedad.
+    # --- Step 4: Write CSV ---
+    # csv.writer with QUOTE_ALL is used so that paths with spaces or
+    # parentheses (e.g. "acting in play/abc.mp4", "backflip (human)/xyz.mp4")
+    # are always quoted and pandas reads them unambiguously.
     output_path = os.path.join(k700_dir, args.output_csv)
-    print(f"\n[4/4] Escribiendo CSV: {output_path}")
+    print(f"\n[4/4] Writing CSV: {output_path}")
     with open(output_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, quoting=csv.QUOTE_ALL)
         for vp in all_video_paths:
             writer.writerow([vp])
 
-    print(f"\n✓ Subconjunto listo:")
-    print(f"  Clases: {len(selected_classes)}")
+    print(f"\n✓ Subset ready:")
+    print(f"  Classes: {len(selected_classes)}")
     print(f"  Videos: {len(all_video_paths)}")
     print(f"  CSV:    {output_path}")
-    print(f"\nActualiza configs/config.yaml:")
+    print(f"\nUpdate configs/config.yaml:")
     print(f'  csv_file: "{args.output_csv}"')
 
 

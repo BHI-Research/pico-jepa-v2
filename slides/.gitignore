@@ -1,0 +1,6 @@
+# El tema UTN-BHI (github.com/javierip/custom-beamer) no se copia en este
+# repositorio: compile.sh lo clona aqui y lo usa desde el clon. Las otras dos
+# entradas cubren el caso de colocarlo a mano junto al .tex.
+.custom-beamer/
+beamerthemeUTN-BHI.sty
+theme/

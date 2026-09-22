@@ -3,21 +3,90 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[spanish,provide=*]{babel}
+% babel-spanish nombra las tablas como "Cuadro"; forzar "Tabla".
+\addto\captionsspanish{\renewcommand{\tablename}{Tabla}}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{microtype}
 \usepackage{array}
 \usepackage{multirow}
+\usepackage{multicol}
 \usepackage{enumitem}
 \setlist{noitemsep, topsep=2pt}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, fit, backgrounds, calc}
 \usepackage{hyperref}
 
-% Compactación de espacio para ajustar a 10 páginas (LLNCS, 1 columna)
+% Estilos comunes de los diagramas
+\tikzset{
+  dgm/.style={font=\sffamily\footnotesize,
+              >={Latex[length=1.6mm]}, semithick},
+  blk/.style={draw, rounded corners=2pt, align=center, inner sep=3pt,
+              minimum height=9mm, minimum width=20mm},
+  dat/.style={blk, fill=black!6},
+  enc/.style={blk, fill=blue!10},
+  prd/.style={blk, fill=orange!18},
+  agg/.style={blk, fill=violet!12},
+  los/.style={blk, fill=green!14},
+  sm/.style={font=\sffamily\scriptsize, inner sep=1.5pt, align=center},
+  ar/.style={->}
+}
+
+% Compactación de espacio (LLNCS, 1 columna)
 \renewcommand{\arraystretch}{0.95}
 \setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
 \setlength{\intextsep}{8pt plus 2pt minus 2pt}
 \emergencystretch=3em  % evita overfull \hbox en párrafos con tokens largos (\texttt)
+
+% -- Compactación tipográfica para entrar en 10 páginas (LLNCS) --------------
+% Títulos: misma definición de llncs.cls (líneas 357-366) con los saltos a la
+% mitad. Se conserva el signo NEGATIVO del beforeskip (suprime la sangría del
+% párrafo siguiente) y el \rightskip/\pretolerance (títulos ragged-right LLNCS).
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{\z@}%
+   {-9\p@ \@plus -2\p@ \@minus -2\p@}{6\p@ \@plus 2\p@ \@minus 2\p@}%
+   {\normalfont\large\bfseries\boldmath\rightskip=\z@ \@plus 8em\pretolerance=10000 }}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
+   {-9\p@ \@plus -2\p@ \@minus -2\p@}{4\p@ \@plus 2\p@ \@minus 2\p@}%
+   {\normalfont\normalsize\bfseries\boldmath\rightskip=\z@ \@plus 8em\pretolerance=10000 }}
+
+% Epígrafes: estructura original de llncs (líneas 806-816); solo cambia el
+% tamaño. \footnotesize no sirve: llncs hace \let\footnotesize\small.
+\newcommand\capsize{\@setfontsize\capsize\@viiipt{9.5}}
+\long\def\@makecaption#1#2{\capsize\vskip\abovecaptionskip
+  \sbox\@tempboxa{{\bfseries #1.} #2}%
+  \ifdim \wd\@tempboxa >\hsize {\bfseries #1.} #2\par
+  \else \global \@minipagefalse \hb@xt@\hsize{\hfil\box\@tempboxa\hfil}\fi
+  \vskip\belowcaptionskip}
+\setlength\abovecaptionskip{3\p@}\setlength\belowcaptionskip{0\p@}
+% llncs resetea estos skips DENTRO del entorno table (líneas 828-831):
+\g@addto@macro\@floatboxreset{\setlength\abovecaptionskip{3\p@}%
+                              \setlength\belowcaptionskip{2\p@}}
+\makeatother
+
+% Ecuación: en el preámbulo, NO en \AtBeginDocument (\normalsize los resetea).
+\setlength{\abovedisplayskip}{4pt plus 1pt minus 1pt}
+\setlength{\belowdisplayskip}{4pt plus 1pt minus 1pt}
+\setlength{\abovedisplayshortskip}{0pt plus 1pt}
+\setlength{\belowdisplayshortskip}{2pt plus 1pt}
+
+% -- Sin numeracion de paginas -----------------------------------------------
+% El PDF se integra en las actas del congreso junto con otros trabajos, que las
+% renumeran al componer el volumen. Se redefine \ps@headings de llncs.cls
+% (lineas 1217-1225) quitando unicamente \thepage; el \headlineindent se
+% conserva para que el encabezado corriente no cambie de posicion.
+\makeatletter
+\def\ps@headings{\let\@mkboth\@gobbletwo
+   \let\@oddfoot\@empty\let\@evenfoot\@empty
+   \def\@evenhead{\normalfont\small\hspace{\headlineindent}%
+                  \leftmark\hfil}%
+   \def\@oddhead{\normalfont\small\hfil\rightmark\hspace{\headlineindent}}%
+   \def\chaptermark##1{}%
+   \def\sectionmark##1{}%
+   \def\subsectionmark##1{}}
+\pagestyle{headings}
+\makeatother
 
 \hypersetup{
   colorlinks=true,
@@ -46,27 +115,21 @@ Bahía Blanca, Argentina\\
 \begin{abstract}
 pico-JEPA es un sistema que aprende a representar videos sin necesidad de
 etiquetas, pensado para correr en una computadora de escritorio. En esta segunda
-versión, pico-JEPA v2, ponemos a prueba una idea sencilla: en lugar de entrenar
-un único modelo grande con todos los datos, entrenar varios modelos pequeños
----cada uno con una porción distinta--- y combinar sus predicciones puede dar
-mejor exactitud. Evaluamos esta idea sobre 30 clases de Kinetics-700, con una red
-base ViT compacta ($\approx 3.4$M de parámetros) entrenada sin etiquetas sobre
-3\,000 videos en una sola placa gráfica de escritorio. Al diversificar la
-arquitectura del clasificador entre los miembros del conjunto y combinarlos
-mediante \emph{apilamiento}, el conjunto supera al modelo único con significancia
-estadística formal (una ventaja de $+5.10$\,pp sobre el conjunto reservado, con
-un intervalo de confianza del 95\,\% que excluye el cero y se mantiene ante
-distintas semillas); las nueve configuraciones evaluadas durante la búsqueda
-favorecen al conjunto. Dos experimentos controlados delimitan cuándo vale la
-idea: la ventaja desaparece con redes base de menor capacidad o con pocas clases.
-Más que una validación de sí o no, nuestra contribución central es un
-\emph{mapa de condiciones} ---capacidad de la red base, cantidad de clases y
-forma de combinar las predicciones--- bajo las cuales la sabiduría colectiva de
-modelos pequeños supera al modelo único, en un escenario de cómputo y datos
-deliberadamente acotado.
+versión ponemos a prueba una idea sencilla: en lugar de entrenar un único modelo
+con todos los datos, entrenar varios modelos pequeños ---cada uno con una porción
+distinta--- y combinar sus predicciones. Evaluamos la idea sobre 30 clases de
+Kinetics-700, con una red compacta de unos 3.4 millones de parámetros entrenada
+en una sola placa gráfica de escritorio. El resultado principal: cuando los
+modelos del conjunto son diversos entre sí y sus predicciones se combinan con un
+meta-modelo aprendido (\emph{apilamiento}), el conjunto supera al modelo único
+por $+5.10$ puntos porcentuales, con significancia estadística formal. Pero la
+ventaja no es universal: dos experimentos controlados muestran que desaparece si
+la red base es demasiado pequeña o si hay pocas clases. Más que una validación de
+sí o no, nuestra contribución central es un \emph{mapa de condiciones} bajo las
+cuales la sabiduría colectiva de modelos pequeños supera al modelo único. El
+código se publica en \url{https://github.com/BHI-Research/pico-jepa-v2}.
 
-\keywords{aprendizaje auto-supervisado de video \and conjuntos de modelos \and
-apilamiento \and JEPA \and ViT \and Kinetics-700}
+\keywords{aprendizaje auto-supervisado de video, conjuntos de modelos, apilamiento, JEPA, ViT, Kinetics-700}
 \end{abstract}
 
 % -----------------------------------------------------------------------
@@ -77,402 +140,535 @@ material etiquetado a mano, una tarea costosa y lenta. El aprendizaje
 auto-supervisado ofrece una alternativa: el modelo aprende mirando videos sin
 etiquetas. Dentro de esta familia, la arquitectura JEPA~\cite{lecun2022path}
 aprende a predecir cómo se ve una región oculta del video a partir de la región
-visible, sin reconstruir cada pixel, y así obtiene representaciones más abstractas
-y útiles~\cite{assran2023self}.
+visible, sin reconstruir cada pixel, y así obtiene representaciones más
+abstractas y útiles~\cite{assran2023self}.
 
-En este trabajo abordamos una pregunta complementaria: dado un presupuesto fijo de
-cómputo y datos, ¿conviene entrenar un único modelo grande con todo el material, o
+En este trabajo abordamos una pregunta complementaria: dado un presupuesto fijo
+de cómputo y datos, ¿conviene entrenar un único modelo con todo el material, o
 varios modelos pequeños, cada uno con una porción distinta, y luego combinar sus
-predicciones? Esta es la hipótesis central de \emph{pico-JEPA}~\cite{rostagno2025pico}.
+predicciones? Esta es la hipótesis central de
+\emph{pico-JEPA}~\cite{rostagno2025pico}.
 
 La intuición proviene del refrán «la unión hace la fuerza»: si cada modelo se
-equivoca de manera distinta, la decisión conjunta puede ser más acertada que la de
-cualquiera por separado~\cite{dietterich2000ensemble,lakshminarayanan2017simple}.
-Sin embargo, esta ventaja no es automática: depende de la capacidad de cada
-modelo, de la calidad de lo aprendido y de cómo se combinen las
-predicciones~\cite{wenzel2020hyperparameter}.
+equivoca de manera distinta, la decisión conjunta puede ser más acertada que la
+de cualquiera por
+separado~\cite{dietterich2000ensemble,lakshminarayanan2017simple}. Sin embargo,
+esta ventaja no es automática: depende de la capacidad de cada modelo, de la
+calidad de lo aprendido y de cómo se combinen las
+predicciones~\cite{wenzel2020hyperparameter}. Precisamente por eso, la pregunta
+interesante no es solo \emph{si} el conjunto gana, sino \emph{cuándo}.
 
 Respecto de nuestro trabajo previo~\cite{rostagno2025pico}, que mostró la
-viabilidad de pico-JEPA en hardware de escritorio con votación simple sobre pocas
-clases, esta versión aporta cuatro elementos nuevos: (a) un conjunto
-\emph{heterogéneo}, en el que cada modelo lleva una cabeza de clasificación
-distinta; (b) el \emph{apilamiento} como forma de combinar las predicciones;
-(c) un análisis estadístico formal con remuestreo \emph{bootstrap} y verificación
-de robustez ante distintas semillas; y (d) la caracterización de las
-\emph{condiciones de validez} de la hipótesis mediante experimentos controlados.
-Concretamente, nuestras contribuciones son:
+viabilidad de pico-JEPA en hardware de escritorio con votación simple sobre
+pocas clases, esta versión aporta cuatro elementos nuevos:
 \begin{enumerate}
-  \item Un flujo de trabajo completo de pico-JEPA v2: entrenamiento sin etiquetas
-        seguido de clasificación supervisada con conjunto heterogéneo, ejecutable
-        íntegramente en una placa gráfica de escritorio.
-  \item La validación experimental de la hipótesis principal sobre K700-val, con
-        significancia formal vía bootstrap para la combinación por apilamiento.
-  \item \textbf{La caracterización de las condiciones de validez}: dos
-        experimentos controlados (capacidad de la red base y cantidad de clases)
-        que delimitan \emph{cuándo} la ventaja del conjunto aparece y cuándo
-        desaparece ---un mapa de validez más informativo que una afirmación de
-        sí o no.
-  \item El análisis de cuatro formas de combinar predicciones y la evidencia de
-        que el \emph{apilamiento} es necesario para convertir la diversidad de los
-        modelos en una mejora medible.
+  \item Un conjunto \emph{heterogéneo}: cada modelo pequeño lleva una cabeza de
+        clasificación distinta, para que aprendan cosas distintas.
+  \item El \emph{apilamiento} como forma de combinar las predicciones: un
+        meta-modelo que aprende a quién conviene escuchar en cada caso.
+  \item Un análisis estadístico formal, con intervalos de confianza y
+        verificación de robustez.
+  \item Un \emph{mapa de condiciones de validez}: dos experimentos controlados
+        que delimitan cuándo la ventaja del conjunto aparece y cuándo
+        desaparece.
 \end{enumerate}
+
+El artículo desarrolla los conceptos a medida que los necesita y se apoya en
+tres diagramas que resumen, respectivamente, el funcionamiento del modelo
+(Fig.~\ref{fig:jepa}), la metodología de entrenamiento (Fig.~\ref{fig:pipeline})
+y la de evaluación (Fig.~\ref{fig:eval}).
 
 % -----------------------------------------------------------------------
 \section{Trabajo Relacionado}
 
-V-JEPA~\cite{bardes2024revisiting} extiende I-JEPA~\cite{assran2023self} al
-dominio temporal: oculta bloques de información que abarcan varios cuadros a la
-vez (los llamados \emph{tubelets}, o tubos espacio-temporales) y aprende a
-predecir su contenido con un codificador de contexto y un codificador objetivo
-que se actualiza lentamente, sin reconstruir pixeles. Nuestro trabajo
-previo~\cite{rostagno2025pico} adoptó esta formulación en hardware de escritorio;
-aquí la extendemos con un conjunto heterogéneo y un análisis estadístico formal.
+\textbf{Aprender de video sin etiquetas.} Las técnicas auto-supervisadas para
+visión se agrupan en tres grandes familias. Los métodos \emph{contrastivos}
+enseñan al modelo que dos vistas transformadas del mismo contenido deben tener
+representaciones parecidas~\cite{chen2020simple}; BYOL mostró que la idea
+funciona incluso sin ejemplos negativos, apoyándose en un segundo codificador
+actualizado por promedio móvil~\cite{grill2020bootstrap}, un mecanismo que la
+familia JEPA hereda. Los métodos de \emph{reconstrucción enmascarada} ocultan
+partes de la entrada y las reconstruyen pixel a pixel: MAE lo demostró en
+imágenes~\cite{he2022masked} y VideoMAE en video~\cite{tong2022videomae}, con
+notable eficiencia en datos. La familia \emph{JEPA}~\cite{lecun2022path}, por
+último, también oculta regiones, pero las predice en el espacio de
+representaciones en lugar de reconstruirlas: I-JEPA~\cite{assran2023self} lo
+hizo en imágenes y V-JEPA~\cite{bardes2024revisiting} lo extendió al video,
+ocultando bloques espacio-temporales que abarcan varios cuadros a la vez. Esta
+última opción es especialmente atractiva en un escenario de bajo cómputo, porque
+evita el costo de un decodificador de pixeles y de reconstruir detalles
+irrelevantes para la semántica. Nuestro trabajo previo~\cite{rostagno2025pico}
+adoptó la formulación de V-JEPA sobre un transformador de visión
+(ViT)~\cite{dosovitskiy2021image} compacto, en hardware de escritorio; aquí la
+extendemos con un conjunto heterogéneo y un análisis estadístico formal.
 
-Combinar varias redes profundas mejora la confiabilidad y la robustez de las
-predicciones~\cite{lakshminarayanan2017simple}. La diversidad entre los modelos
-puede provenir de distintas inicializaciones~\cite{fort2019deep}, de darle a cada
-uno una porción distinta de los datos, de variar su arquitectura, o de variar sus
-hiperparámetros, que aporta beneficios análogos~\cite{wenzel2020hyperparameter}.
-En video es habitual promediar la predicción sobre varios fragmentos del mismo
-clip para obtener evaluaciones más estables~\cite{wang2018temporal}. La idea de
-que cada modelo se especialice en una parte distinta del problema se remonta a las
-mezclas de expertos~\cite{jacobs1991adaptive}; a diferencia de aquellas, donde un
-mecanismo aprendido decide qué experto usar, pico-JEPA reparte las clases de forma
-explícita y equilibrada, lo que hace la especialización transparente y fácil de
-controlar.
+\textbf{Conjuntos de modelos.} Combinar varias redes profundas mejora la
+exactitud, la confiabilidad y la robustez de las
+predicciones~\cite{dietterich2000ensemble,lakshminarayanan2017simple}. La
+diversidad entre los miembros ---la condición para que el conjunto aporte---
+puede provenir de distintas inicializaciones~\cite{fort2019deep}, de darle a
+cada uno una porción distinta de los datos, o de variar su arquitectura o sus
+hiperparámetros~\cite{wenzel2020hyperparameter}. Las formas de combinar también
+tienen su historia: frente a la votación y el promedio, la \emph{generalización
+apilada} de Wolpert~\cite{wolpert1992stacked} propuso hace tres décadas que un
+segundo modelo \emph{aprenda} de las predicciones de los primeros; es la base
+del apilamiento que usamos aquí. En video, además, es habitual promediar la
+predicción sobre varios fragmentos del mismo clip para obtener evaluaciones más
+estables~\cite{wang2018temporal}, práctica que adoptamos.
+
+\textbf{Especialización y reparto de datos.} La idea de que cada modelo se
+especialice en una parte del problema se remonta a las mezclas de
+expertos~\cite{jacobs1991adaptive}, hoy renovadas a gran escala en arquitecturas
+dispersas donde una compuerta aprendida enruta cada entrada hacia unos pocos
+expertos~\cite{shazeer2017outrageously}. A diferencia de aquellas, pico-JEPA
+reparte los datos de forma explícita y equilibrada entre submodelos, lo que hace
+la especialización transparente, fácil de controlar y sin costo de enrutamiento.
+
+\textbf{Experimentación automatizada.} La búsqueda de configuraciones de este
+trabajo se apoya en la tradición del aprendizaje de máquina automatizado
+(AutoML)~\cite{hutter2019automated} y, más directamente, en herramientas
+recientes de prueba automatizada de hipótesis~\cite{karpathy2025autoresearch},
+donde un bucle propone experimentos, los ejecuta y registra sus resultados con
+la métrica bloqueada de antemano.
 
 % -----------------------------------------------------------------------
-\section{Arquitectura de pico-JEPA v2}
+\section{Cómo Funciona pico-JEPA v2}
 \label{sec:arch}
 
-\subsection{Entrenamiento sin Etiquetas}
+El sistema tiene dos etapas: primero aprende a \emph{representar} videos sin
+usar etiquetas; después usa esas representaciones para \emph{clasificar}
+acciones. Sobre esa base se construye el conjunto de modelos pequeños. La
+Fig.~\ref{fig:jepa} resume el mecanismo de la primera etapa y la
+Fig.~\ref{fig:pipeline} el flujo completo de entrenamiento.
 
-El entrenamiento sin etiquetas sigue la receta de JEPA para video. Cada clip
-$\mathbf{v} \in \mathbb{R}^{C \times T \times H \times W}$ se parte en parches
-espacio-temporales de tamaño $(t, h, w) = (2, 16, 16)$, lo que produce
-$N_p = (T/t)\times(H/h)\times(W/w) = 4{\times}14{\times}14 = 784$ parches.
+\subsection{Primera Etapa: Aprender sin Etiquetas}
 
-De esos parches, una parte se mantiene visible (el \emph{contexto}, un 20\,\% de
-los parches) y el resto se oculta (el \emph{objetivo}, un 80\,\%). El sistema
-entrena dos codificadores y un predictor:
+La idea es un juego de «completar lo que falta». Cada video se divide en
+pequeños bloques espacio-temporales (parches). Al modelo se le muestra solo una
+parte de ellos (el \emph{contexto}, un 20\,\%) y se le pide predecir el
+contenido del resto (el \emph{objetivo}, un 80\,\% oculto). La clave de JEPA es
+que la predicción no ocurre pixel a pixel, sino en un espacio de
+representaciones abstractas: el modelo debe anticipar \emph{qué} hay en la
+región oculta, no dibujarla.
 
-\begin{itemize}
-  \item \textbf{Codificador en línea} $f_\theta$: una red ViT reducida ($d{=}192$,
-        la mitad del ViT-Small canónico de $d{=}384$) que procesa el clip con los
-        parches de contexto visibles.
-  \item \textbf{Codificador objetivo} $f_{\bar\theta}$: la misma red, pero sus
-        pesos no se ajustan por descenso de gradiente, sino como un promedio móvil
-        de los del codificador en línea:
-        $\bar\theta \leftarrow \tau\bar\theta + (1{-}\tau)\theta$, con $\tau$
-        siguiendo un esquema cosenoidal de $0.996$ a $0.9999$.
-  \item \textbf{Predictor} $g_\phi$: una red más superficial que, a partir del
-        contexto, predice la representación de los parches ocultos $\hat{z}_i$.
-\end{itemize}
+Para lograrlo intervienen tres piezas: un \textbf{codificador en línea} que
+procesa los parches visibles, un \textbf{codificador objetivo} que produce las
+representaciones «correctas» de los parches ocultos, y un \textbf{predictor}
+que intenta acertarlas a partir del contexto. El codificador objetivo es una
+copia del codificador en línea que se actualiza lentamente (un promedio móvil
+de sus pesos) y nunca recibe gradiente; este detalle es esencial, porque evita
+que ambos codificadores colapsen a una representación trivial y constante. El
+codificador es una red ViT compacta de unos 3.4 millones de parámetros
+($d{=}192$, profundidad 8, 8 cabezas de atención: aproximadamente la mitad del
+ViT-Small canónico de $d{=}384$).
 
-El modelo aprende minimizando el error cuadrático medio entre lo que predice y lo
-que produce el codificador objetivo:
+\begin{figure}[t]
+\centering
+\resizebox{0.9\linewidth}{!}{%
+\begin{tikzpicture}[dgm]
+
+  % --- Clip de entrada (tres cuadros apilados) ---
+  \foreach \o in {0.24, 0.12, 0} {
+    \draw[fill=black!8] (\o,\o) rectangle ++(1.20,0.90);
+  }
+  \node[sm] at (0.82,-0.45) {Clip de video\\$8{\times}224{\times}224$};
+
+  % --- Parcheo y ocultamiento ---
+  \begin{scope}[shift={(2.70,0.06)}, scale=0.29]
+    \fill[black!25] (0,0) rectangle (4,4);
+    \foreach \x/\y in {0/3, 1/1, 2/2, 3/0} {\fill[white] (\x,\y) rectangle ++(1,1);}
+    \draw[black!45, step=1] (0,0) grid (4,4);
+    \draw[black!60] (0,0) rectangle (4,4);
+  \end{scope}
+  \node[sm] at (3.28,-0.45) {Parches $(2{\times}16{\times}16)$\\784 por clip};
+
+  % --- Codificadores y predictor ---
+  \node[enc, minimum width=24mm] (fon) at (6.55,1.75) {$f_\theta$: codificador\\en línea};
+  \node[enc, minimum width=24mm] (ftg) at (6.55,-1.35) {$f_{\bar\theta}$: codificador\\objetivo};
+  \node[prd, minimum width=21mm] (pred) at (9.60,1.75) {$g_\phi$\\Predictor};
+  \node[los, minimum width=31mm, minimum height=13mm] (loss) at (13.10,0.20)
+       {$\mathcal{L}$: error cuadrático medio\\\emph{en el espacio de}\\\emph{representaciones}};
+
+  % --- Conexiones ---
+  \draw[ar] (1.62,0.60) -- (2.58,0.60);
+  \draw[ar] (3.94,0.60) -- (4.55,0.60) |- (fon.west);
+  \draw[ar] (3.94,0.60) -- (4.55,0.60) |- (ftg.west);
+  \node[sm, anchor=east] at (5.28,2.15) {contexto:\\20\,\% visible};
+  \node[sm, anchor=east] at (5.28,-1.75) {clip completo};
+
+  \draw[ar] (fon) -- node[sm, above] {$z_{\text{ctx}}$} (pred);
+  \draw[ar] (pred.east) -- (11.05,1.75) |- ([yshift=3.5mm]loss.west);
+  \node[sm, anchor=east] at (10.95,1.10) {$\hat{z}$};
+  \draw[ar] (ftg.east) -- (11.05,-1.35) |- ([yshift=-3.5mm]loss.west);
+  \node[sm, anchor=east] at (10.95,-0.75) {$\mathrm{sg}[z]$};
+
+  % --- EMA y stop-gradient ---
+  \draw[ar, dashed] (fon.south) -- node[sm, right=1mm, pos=0.5]
+       {EMA (sin gradiente)} (ftg.north);
+
+\end{tikzpicture}}
+\caption{Funcionamiento del modelo (primera etapa, auto-supervisada).}
+\label{fig:jepa}
+\end{figure}
+
+Formalmente, la pérdida es el error cuadrático medio entre lo predicho y la
+representación objetivo, sobre el conjunto $\mathcal{T}$ de parches ocultos:
 \begin{equation}
   \mathcal{L} = \frac{1}{|\mathcal{T}|}\sum_{i \in \mathcal{T}}
-  \bigl\|\hat{z}_i - \mathrm{sg}\!\left[f_{\bar\theta}(\mathbf{v})_i\right]\bigr\|_2^2
+  \bigl\|\hat{z}_i - \mathrm{sg}\!\left[f_{\bar\theta}(\mathbf{v})_i\right]\bigr\|_2^2 ,
   \label{eq:loss}
 \end{equation}
-donde $\mathrm{sg}[\cdot]$ indica que el codificador objetivo no recibe gradiente
-(su único cambio viene del promedio móvil). Este detalle es esencial: sin él,
-ambos codificadores colapsarían a una representación trivial y constante.
+donde $\mathbf{v} \in \mathbb{R}^{C \times T \times H \times W}$ es el clip y
+$\mathrm{sg}[\cdot]$ indica que el codificador objetivo no recibe gradiente.
 
-\subsection{Clasificación Supervisada}
+\subsection{Segunda Etapa: Clasificar}
 
-Una vez entrenado el codificador $f_\theta$, le agregamos una cabeza de
-clasificación, que puede ser de tres tipos:
-\begin{itemize}
-  \item \textbf{Lineal}: una capa lineal sobre el promedio de los parches.
-  \item \textbf{MLP de 2 capas}: dos capas con una no linealidad ReLU.
-  \item \textbf{Atencional}: una capa de atención entre parches seguida de una
-        capa lineal, que recupera mejor la estructura temporal del video.
-\end{itemize}
+Una vez entrenado el codificador, le agregamos una \emph{cabeza de
+clasificación}: un módulo pequeño que convierte las representaciones en una
+predicción de clase. Usamos tres tipos de cabeza, de menor a mayor complejidad:
+una \textbf{lineal} (capta señales generales promediadas), una \textbf{MLP de
+dos capas} (agrega matices no lineales) y una \textbf{atencional} (recupera
+mejor la estructura temporal del video). Esta variedad no es un detalle menor:
+como veremos, es la fuente de diversidad que hace funcionar al conjunto.
 
-El codificador puede mantenerse congelado (\texttt{freeze\_encoder=True}) o
-ajustarse finamente con una tasa de aprendizaje pequeña
-($\text{lr\_codificador} = 3{\times}10^{-5}$,
-$\text{lr\_cabeza} = 5{\times}10^{-4}$).
+\subsection{El Conjunto: Cuatro Modelos Pequeños que Deciden Juntos}
+\label{sec:ensemble}
 
-\subsection{El Conjunto y la Combinación de Predicciones}
+El conjunto entrena $N{=}4$ modelos pequeños (\emph{submodelos}). Cada uno
+recibe una porción distinta de los datos, repartida de forma equilibrada entre
+clases (cada submodelo ve una fracción $1/N$ de los ejemplos de cada clase), y
+se lo hace deliberadamente distinto de los demás mediante mecanismos de
+diversificación: rota el tipo de cabeza (lineal, MLP de dos capas, atencional),
+alterna si el codificador se congela o se ajusta finamente, varía la tasa de
+aprendizaje de la cabeza en $\pm$30\,\%, usa una semilla distinta en cada uno
+($\text{semilla\_base} + 1000 \cdot i$) y varía la cantidad de épocas en
+$\pm 2$. El primer submodelo conserva la configuración base y actúa como
+referencia. El propósito es uno solo: que los submodelos \emph{se equivoquen de
+maneras distintas}, porque solo entonces combinar sus opiniones aporta algo.
 
-El sistema entrena $N=4$ modelos pequeños (que llamaremos \emph{submodelos}). Cada
-uno recibe una porción distinta de los datos, repartida de forma equilibrada entre
-clases (\texttt{stratified-by-class}). Para que los submodelos no aprendan
-exactamente lo mismo, los hacemos diversos en varios aspectos:
-
-\begin{itemize}
-  \item Tipo de cabeza (\texttt{head\_type}): se rota entre lineal, MLP de 2 capas
-        y atencional.
-  \item Congelar o no el codificador (\texttt{freeze\_encoder}): se alterna.
-  \item Tasa de aprendizaje de la cabeza (\texttt{learning\_rate\_classifier}):
-        con una perturbación aleatoria de $\pm$30\,\%.
-  \item Semilla aleatoria (\texttt{seed}): distinta en cada submodelo
-        ($\text{semilla\_base} + 1000 \cdot i$).
-  \item Cantidad de épocas (\texttt{num\_epochs\_classify}): la base $\pm 2$.
-\end{itemize}
-
-Para combinar las predicciones de los cuatro submodelos comparamos cuatro
-estrategias:
+Comparamos cuatro maneras de combinar sus predicciones, de la más simple a la
+más elaborada:
 \begin{enumerate}
   \item \textbf{Votación dura}: gana la clase más votada.
-  \item \textbf{Votación blanda}: se promedian las probabilidades softmax.
-  \item \textbf{Votación ponderada}: el promedio da más peso a los submodelos que
-        mejor rindieron en validación.
-  \item \textbf{Apilamiento}: un meta-modelo (una regresión logística) se entrena
-        sobre las $N \times C$ probabilidades de todos los submodelos y aprende a
-        ponderar a cada uno según convenga.
+  \item \textbf{Votación blanda}: se promedian las probabilidades que asigna
+        cada submodelo.
+  \item \textbf{Votación ponderada}: el promedio da más peso a los submodelos
+        que mejor rindieron en validación.
+  \item \textbf{Apilamiento}~\cite{wolpert1992stacked}: un meta-modelo (una
+        regresión logística) recibe las probabilidades de todos los submodelos
+        y \emph{aprende} a quién conviene escuchar para cada clase.
 \end{enumerate}
+La diferencia conceptual es importante: las tres votaciones tratan a los
+submodelos con reglas fijas; el apilamiento, en cambio, aprende de los datos
+cómo ponderarlos. La Fig.~\ref{fig:pipeline} resume el flujo completo de
+entrenamiento, desde los videos sin etiquetas hasta la comparación entre el
+conjunto y el modelo único.
+
+\begin{figure}[t]
+\centering
+\resizebox{0.9\linewidth}{!}{%
+\begin{tikzpicture}[dgm]
+
+  % ================= Etapa 1 =================
+  \node[dat, minimum width=25mm] (unl) at (0,0) {3\,000 videos\\\textbf{sin etiquetas}};
+  \node[prd, minimum width=31mm] (jepa) at (4.6,0)
+       {Pre-entrenamiento JEPA\\(Fig.~\ref{fig:jepa}), 20 épocas};
+  \node[enc, minimum width=36mm] (encoder) at (9.9,0)
+       {Codificador ViT compartido\\$d{=}192$, 3.4\,M parámetros};
+  \draw[ar] (unl) -- (jepa);
+  \draw[ar] (jepa) -- (encoder);
+
+  \begin{scope}[on background layer]
+    \node[draw, dashed, rounded corners=3pt, fill=black!3, inner sep=4mm,
+          fit=(unl)(jepa)(encoder)] (e1) {};
+  \end{scope}
+  \node[sm, anchor=north west, font=\sffamily\scriptsize\bfseries]
+       at ([xshift=1.5mm, yshift=-1mm]e1.north west) {ETAPA 1 --- auto-supervisada};
+
+  % ================= Etapa 2 =================
+  \node[dat, minimum width=25mm] (lab) at (0,-4.35)
+       {876 videos\\\textbf{etiquetados}\\30 clases};
+
+  % --- Rama A: modelo único ---
+  \node[blk, fill=orange!14, minimum width=33mm] (gral) at (5.0,-2.55)
+       {\textbf{Modelo único} (referencia)\\todos los datos, 1 cabeza};
+
+  % --- Rama B: conjunto ---
+  \node[blk, fill=black!6, minimum width=27mm] (split) at (4.4,-5.65)
+       {Reparto equilibrado\\por clase: 4 porciones};
+  \node[blk, fill=blue!8, minimum width=36mm, minimum height=7mm] (m1) at (9.3,-4.15)
+       {$M_1$: cabeza lineal, congelado};
+  \node[blk, fill=blue!8, minimum width=36mm, minimum height=7mm] (m2) at (9.3,-5.15)
+       {$M_2$: cabeza MLP-2, ajuste fino};
+  \node[blk, fill=blue!8, minimum width=36mm, minimum height=7mm] (m3) at (9.3,-6.15)
+       {$M_3$: cabeza atencional, congelado};
+  \node[blk, fill=blue!8, minimum width=36mm, minimum height=7mm] (m4) at (9.3,-7.15)
+       {$M_4$: cabeza lineal, ajuste fino};
+  \node[sm, anchor=north] (note) at (9.3,-7.62)
+       {además: lr $\pm$30\,\%, semilla y épocas distintas};
+
+  \node[agg, minimum width=26mm, minimum height=13mm] (stack) at (14.0,-5.65)
+       {\textbf{Combinación}
+       	%\\meta-modelo\\(regresión logística)
+       	};
+
+  \draw[ar] (lab.north) |- (gral.west);
+  \draw[ar] (lab) -- (split);
+  \foreach \m in {m1, m2, m3, m4} {\draw[ar] (split.east) -- (\m.west);}
+  \foreach \m in {m1, m2, m3, m4} {\draw[ar] (\m.east) -- (stack.west);}
+  \node[sm, anchor=south] at (12.0,-3.75) {probabilidades\\por clase};
+
+  % Codificador compartido hacia ambas ramas
+  \draw[ar, dashed] (encoder.south) -- ++(0,-0.45) -| (gral.north);
+  \draw[ar, dashed] (encoder.south) -- ++(0,-0.45) -| (m1.north);
+  \node[sm, anchor=north west] at (10.1,-0.98) {codificador compartido};
+
+  % --- Salida ---
+  \node[los, minimum width=30mm, minimum height=13mm] (gap) at (14.0,-2.55)
+       {\textbf{Brecha} $\Delta$\\$\text{exact}_{\text{conj}} -
+        \text{exact}_{\text{únic}}$\\(Fig.~\ref{fig:eval})};
+  \draw[ar] (gral.east) -- (gap.west);
+  \draw[ar] (stack.north) -- (gap.south);
+
+  \begin{scope}[on background layer]
+    \node[draw, dashed, rounded corners=3pt, fill=black!3, inner sep=4mm,
+          fit=(lab)(gral)(split)(m1)(m4)(note)(stack)(gap)] (e2) {};
+  \end{scope}
+  \node[sm, anchor=north west, font=\sffamily\scriptsize\bfseries]
+       at ([xshift=1.5mm, yshift=-1mm]e2.north west) {ETAPA 2 --- clasificación supervisada};
+
+\end{tikzpicture}}
+\caption{Metodología de entrenamiento. La Etapa 1 aprende un codificador sin
+etiquetas; la Etapa 2 lo reutiliza en dos ramas que se comparan entre sí: el
+\emph{modelo único}, entrenado con todos los datos etiquetados, y el
+\emph{conjunto} de cuatro submodelos, cada uno entrenado con una porción
+equilibrada por clase y con una cabeza distinta. 
+Las probabilidades de los
+cuatro submodelos alimentan la combinación.
+La diferencia de exactitud entre ambas ramas es la brecha $\Delta$, métrica única del trabajo.}
+\label{fig:pipeline}
+\end{figure}
 
 % -----------------------------------------------------------------------
 \section{Configuración Experimental}
+\label{sec:setup}
 
-\subsection{Datos}
+\textbf{Datos.} Usamos Kinetics-700-2020 (K700)~\cite{smaira2020short}, un
+conjunto público de reconocimiento de acciones humanas en video. El codificador
+se entrena sin etiquetas sobre 3\,000 videos;
+la clasificación usa 30 clases (1\,467 videos),
+divididos en tres partes: entrenamiento (876),
+validación (297) y un \emph{conjunto reservado} de 294 videos que no se toca
+hasta la evaluación final. Al
+evaluar, cada video se predice promediando sobre 10 fragmentos, una práctica
+habitual que estabiliza la medición~\cite{wang2018temporal}. La
+Fig.~\ref{fig:eval} resume el protocolo completo de evaluación.
 
-Usamos Kinetics-700-2020 (K700)~\cite{smaira2020short}, un conjunto público de
-reconocimiento de acciones humanas en video. En lo que sigue, ``K700-val'' denota
-su partición de validación.
+\textbf{La métrica: la brecha.} Toda la evaluación gira en torno a una sola
+pregunta: ¿cuánto supera el conjunto al modelo único? Llamamos \emph{brecha}
+($\Delta$) a esa diferencia de exactitud, en puntos porcentuales (pp), medida
+sobre el conjunto reservado. El modelo único ---nuestra referencia--- se
+entrena con todos los datos de entrenamiento; cada submodelo, solo con su
+porción.
 
-\begin{itemize}
-  \item \textbf{Entrenamiento sin etiquetas}: 3\,000 videos de la partición
-        \texttt{train/}, sin usar sus etiquetas.
-  \item \textbf{Clasificación}: 30 clases de la partición \texttt{val/},
-        1\,467 videos en total.
-  \item \textbf{Partición} (fija, semilla=1337): entrenamiento\,876 /
-        validación\,297 / \textbf{conjunto reservado\,294}.
-\end{itemize}
+\textbf{¿La brecha es real o es azar?} Con 294 videos de evaluación, una brecha
+positiva podría deberse a la suerte. Para descartarlo usamos
+\emph{bootstrap}: remuestreamos el conjunto reservado $10\,000$ veces
+(semilla 1337) y observamos en qué rango cae la brecha, obteniendo un intervalo
+de confianza (IC) del 95\,\%. El veredicto es \textbf{SOPORTADO} si todo el
+intervalo queda por encima de cero (el conjunto gana con 95\,\% de confianza),
+\textbf{INCONCLUSO} si la brecha es positiva pero el intervalo contiene el
+cero, y \textbf{RECHAZADO} si la brecha no es positiva.
 
-Los videos se procesan como clips de 8 cuadros ($224{\times}224$ pixeles),
-normalizados con las estadísticas de ImageNet. La lectura de video usa
-torchcodec~v0.4.0 sobre FFmpeg~v6.
-
-Al evaluar usamos \emph{evaluación con múltiples fragmentos}: de cada video se
-toman $n_\text{frag}{=}10$ clips y se promedian sus probabilidades antes de
-decidir la clase. Esto reduce la variabilidad de la predicción y es práctica
-habitual en reconocimiento de acciones en video~\cite{wang2018temporal}.
-
-\subsection{Arquitectura e Hiperparámetros}
-
-El codificador es una red ViT reducida ($d{=}192$, profundidad 8, 8 cabezas de
-atención, parche $(2{,}16{,}16)$, 784 parches, $\approx$3.4M de parámetros). La
-Tabla~\ref{tab:hyperparams} resume el resto de los hiperparámetros del sistema.
-
-\begin{table}[h]
+\begin{figure}[t]
 \centering
-\caption{Hiperparámetros del entrenamiento sin etiquetas y del conjunto.}
-\label{tab:hyperparams}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}llll@{}}
-\toprule
-\multicolumn{2}{@{}l}{\textit{Entrenamiento sin etiquetas}} & \multicolumn{2}{l}{\textit{Conjunto}}\\
-Épocas & 20 & $N$ submodelos & 4\\
-Fracción oculta & 0.80 & Fragmentos/video & 10\\
-Ocultamiento & Multibloque (3) & Reparto & equilibrado por clase\\
-Promedio móvil $[\tau_0,\tau_1]$ & $[0.996, 0.9999]$ & & \\
-Decaimiento por capa & 0.9 & & \\
-\bottomrule
-\end{tabular}
-\end{table}
+\resizebox{0.9\linewidth}{!}{%
+\begin{tikzpicture}[dgm]
 
-\subsection{Cómo Medimos el Éxito}
+  % --- Origen de datos y partición ---
+  \node[dat, minimum width=40mm] (all) at (0,0)
+       {1\,467 videos etiquetados --- 30 clases de K700 };
+  \node[sm, anchor=south] at (2.60,-0.73) {partición fija, semilla 1337};
 
-La medida principal es la \emph{brecha}: cuánto supera (en puntos porcentuales,
-pp) la exactitud del conjunto a la del modelo único sobre el conjunto reservado:
-\begin{equation}
-  \Delta = \text{exactitud}_\text{conjunto}(\mathcal{H}) -
-           \text{exactitud}_\text{único}(\mathcal{H})
-  \label{eq:gap}
-\end{equation}
-donde $\mathcal{H}$ es el conjunto reservado (294 videos). Para saber si la brecha
-es real o producto del azar, estimamos un intervalo de confianza (IC) del 95\,\%
-mediante remuestreo bootstrap sobre $\mathcal{H}$ ($n{=}10\,000$ remuestreos,
-semilla=1337); $\text{CI}_\text{low}$ y $\text{CI}_\text{high}$ son sus extremos
-inferior y superior. El veredicto depende de dónde cae el intervalo respecto del
-cero: \textbf{SOPORTADO} si $\text{CI}_\text{low} > 0$ (todo el intervalo queda
-por encima de cero, es decir, el conjunto supera al modelo único con un 95\,\% de
-confianza); \textbf{INCONCLUSO} si la brecha es positiva pero el intervalo
-contiene el cero; y \textbf{RECHAZADO} si la brecha no es positiva.
+  % Cada partición lleva adentro para qué se usa (antes era una fila aparte)
+  \node[dat, minimum width=32mm] (tr) at (-4.9,-2.35)
+       {\textbf{Entrenamiento}\\876 videos\\ajusta $M_1..M_4$\\y el modelo único};
+  \node[dat, minimum width=32mm] (va) at (0,-2.35)
+       {\textbf{Validación}\\297 videos\\selecciona configuración\\y entrena el apilamiento};
+  \node[blk, fill=red!8, minimum width=32mm] (ho) at (4.9,-2.35)
+       {\textbf{Conjunto reservado}\\294 videos\\intocado hasta\\la medición final};
 
-El modelo único ---nuestra referencia--- se entrena con los 876 videos de
-entrenamiento completos. La comparación responde a la hipótesis tal como se
-plantea ---muchos modelos pequeños sobre porciones frente a un único modelo sobre
-todos los datos--- y no iguala explícitamente el presupuesto de cómputo: el
-conjunto cuesta $N$ veces el entrenamiento del modelo único. Una comparación a
-igual cantidad de operaciones es una extensión natural de este protocolo.
+  \draw[ar] (all.south) -- ++(0,-0.35) -| (tr.north);
+  \draw[ar] (all.south) -- ++(0,-0.35) -| (va.north);
+  \draw[ar] (all.south) -- ++(0,-0.35) -| (ho.north);
 
-El hardware utilizado fue: Intel Core i7, 65\,GB de RAM y una placa NVIDIA GTX
-1060 de 6\,GB.
+  % --- Evaluación final ---
+  \node[prd, minimum width=54mm] (ev) at (-1.0,-4.7)
+       {\textbf{Evaluación final} (una sola vez): 10 fragmentos por video,\\
+        probabilidades promediadas $\Rightarrow$
+        $\text{exact}_{\text{conj}}$ y $\text{exact}_{\text{únic}}$};
+  \draw[ar] (tr.south) -- ++(0,-0.35) -| ([xshift=-19mm]ev.north);
+  \draw[ar] (va.south) -- ++(0,-0.35) -| ([xshift=-2mm]ev.north);
+  \draw[ar] (ho.south) -- ++(0,-0.35) -| ([xshift=19mm]ev.north);
 
-\paragraph{Reproducibilidad.} Todo el protocolo es determinístico: la triple
-partición (entrenamiento/validación/reservado) se genera con \texttt{semilla=1337}
-y queda fija durante toda la búsqueda, de modo que el conjunto reservado permanece
-intocado hasta la evaluación final. El código, las configuraciones y los programas
-de evaluación estarán disponibles para revisión.
+  % --- Métrica y veredicto comparten banda: la brecha y su bootstrap a la
+  %     izquierda, los tres veredictos posibles apilados a la derecha.
+  \node[los, minimum width=50mm, minimum height=13mm] (bs) at (-3.2,-6.8)
+       {\textbf{Brecha} $\Delta = \text{exact}_{\text{conj}} -
+        \text{exact}_{\text{únic}}$\,[pp]\\
+        \textbf{Bootstrap}: $10\,000$ remuestreos $\Rightarrow$ IC del 95\,\%};
+  \draw[ar] (ev.south) -- ++(0,-0.4) -| (bs.north);
+
+  \node[blk, fill=green!16, minimum width=44mm, minimum height=6mm] (v1) at (3.6,-5.95)
+       {\textbf{SOPORTADO}: $\text{IC}_{\text{inf}} > 0$};
+  \node[blk, fill=yellow!22, minimum width=44mm, minimum height=6mm] (v2) at (3.6,-6.8)
+       {\textbf{INCONCLUSO}: $\Delta>0$, el IC contiene el 0};
+  \node[blk, fill=red!12, minimum width=44mm, minimum height=6mm] (v3) at (3.6,-7.65)
+       {\textbf{RECHAZADO}: $\Delta \leq 0$};
+  \draw[ar] (bs.east) -- (0.0,-6.8) |- (v1.west);
+  \draw[ar] (bs.east) -- (v2.west);
+  \draw[ar] (bs.east) -- (0.0,-6.8) |- (v3.west);
+
+\end{tikzpicture}}
+\caption{Metodología de evaluación. La triple partición se genera una sola vez
+con semilla 1337 y el conjunto reservado permanece inalterado durante toda la
+búsqueda de configuraciones: solo se accede a él en la medición final. La
+métrica oficial ---la brecha $\Delta$--- y su intervalo de confianza por
+bootstrap determinan uno de los tres veredictos, fijados de antemano.}
+\label{fig:eval}
+\end{figure}
+
+\textbf{Hiperparámetros y hardware.} El pre-entrenamiento usa 20 épocas,
+fracción oculta $0.80$ con ocultamiento multibloque (3 bloques), promedio móvil
+$\tau \in [0.996,\,0.9999]$ y decaimiento por capa $0.9$. En la clasificación,
+el codificador puede mantenerse congelado o ajustarse finamente con tasa de
+aprendizaje reducida ($\text{lr}_{\text{codificador}} = 3{\times}10^{-5}$,
+$\text{lr}_{\text{cabeza}} = 5{\times}10^{-4}$). Todo el flujo corre en una única máquina de
+escritorio (Intel Core i7, 65\,GB de RAM, NVIDIA GTX 1060 de 6\,GB).
 
 % -----------------------------------------------------------------------
 \section{Resultados}
 
-\subsection{Las Nueve Mediciones de la Fase 4}
+\subsection{Una Señal Consistente: Nueve Mediciones, Nueve Positivas}
+\label{sec:phase4}
 
-El flujo de trabajo de pico-JEPA se organiza en cuatro fases que un bucle de
-búsqueda recorre de manera iterativa: (1)~entrenamiento sin etiquetas del
-codificador; (2)~entrenamiento de los clasificadores (los $N$ submodelos del
-conjunto y el modelo único); (3)~combinación del conjunto; y (4)~evaluación de la
-hipótesis sobre el conjunto reservado. Las tres primeras corresponden a los
-componentes descritos en la Sección~\ref{sec:arch}; la \textbf{Fase 4} es la única
-que accede al conjunto reservado y mide la métrica oficial, la brecha de la
-Ec.~\eqref{eq:gap}. El bucle propone configuraciones sucesivas del clasificador y
-del conjunto, y cada vez que la combinación mejora en validación dispara una
-evaluación de Fase 4. Las nueve mediciones que siguen son precisamente esas
-evaluaciones en puntos sucesivos del recorrido, con el modelo único en distintos
-grados de entrenamiento.
+La exploración de configuraciones no se hizo a mano: la condujo un bucle de
+experimentación automatizada, inspirado en
+\emph{autoresearch}~\cite{karpathy2025autoresearch}, que propone cambios de
+configuración, entrena los modelos reales y registra cada resultado, siempre
+con la métrica y el conjunto reservado fijados de antemano. Cada vez que una
+configuración mejoraba en validación, el bucle medía la brecha sobre el
+conjunto reservado. Ese proceso produjo nueve mediciones, y las nueve
+resultaron positivas, con un promedio de $+2.53$\,pp
+(Fig.~\ref{fig:timeline}). Si la verdadera brecha fuera cero, obtener nueve
+positivos seguidos sería tan improbable como sacar nueve caras seguidas con
+una moneda ($0.5^9 \approx 0.002$).
 
-\begin{table}[h]
-\centering
-\caption{Mediciones de la Fase 4 con conjunto heterogéneo ($N=4$). Las nueve
-tienen brecha positiva.}
-\label{tab:phase4}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{cccccc}
-\toprule
-\textbf{Id} & \textbf{Brecha (pp)} & \textbf{CI$_\text{low}$} & \textbf{CI$_\text{high}$}
-            & $\text{exact}_\text{conj}$ & $\text{exact}_\text{únic}$ \\
-\midrule
-8  & $+3.40$ & $-0.34$ & $+6.80$ & 9.52\,\% & 6.12\,\% \\
-9  & $+3.40$ & $-0.34$ & $+7.14$ & 9.52\,\% & 6.12\,\% \\
-\textbf{10} & $\mathbf{+4.08}$ & $\mathbf{+0.68}$ & $+7.82$
-            & 10.20\,\% & 6.12\,\% \\
-11 & $+2.72$ & $-1.02$ & $+6.46$ & 8.84\,\% & 6.12\,\% \\
-13 & $+1.02$ & $-2.72$ & $+4.76$ & 9.52\,\% & 8.50\,\% \\
-16 & $+2.72$ & $-1.36$ & $+6.46$ & 10.20\,\% & 7.48\,\% \\
-32 & $+2.04$ & $-2.04$ & $+6.12$ & 10.20\,\% & 8.16\,\% \\
-37 & $+1.02$ & $-3.06$ & $+5.10$ & 10.88\,\% & 9.86\,\% \\
-42 & $+2.38$ & $-1.37$ & $+6.46$ & 10.54\,\% & 8.16\,\% \\
-\midrule
-\multicolumn{2}{l}{\textit{Promedio}} &
-  \multicolumn{2}{l}{$+2.53$\,pp} & & \\
-\bottomrule
-\end{tabular}
-\end{table}
 
-Las 9 mediciones de la Tabla~\ref{tab:phase4} son todas estrictamente positivas.
-Si la verdadera brecha fuera cero, obtener nueve positivos seguidos sería tan
-improbable como sacar nueve caras seguidas con una moneda:
-\begin{equation}
-  P(9/9\ \text{positivos} \mid H_0) = 0.5^9 = \tfrac{1}{512} \approx 0.002.
-  \label{eq:signtest}
-\end{equation}
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{fig1_phase4_timeline.png}
+  \caption{Las nueve mediciones de la brecha a lo largo del recorrido de
+  búsqueda, con sus intervalos de confianza del 95\,\% (bootstrap). Todas son
+  positivas; debajo de cada barra, la exactitud del modelo único en ese punto.}
+  \label{fig:timeline}
+\end{figure}
 
-El promedio de las nueve es $\bar\Delta = +2.53$\,pp. Ahora bien, estas mediciones
-\emph{no son estadísticamente independientes}: comparten el mismo conjunto
-reservado y provienen de configuraciones sucesivas del mismo bucle de búsqueda.
-Por eso no reportamos un intervalo de confianza sobre este promedio; la prueba de
-signos y el promedio deben leerse como evidencia de la \textbf{consistencia
-direccional} del efecto (las nueve configuraciones favorecen al conjunto), no como
-una prueba formal de significancia, que requeriría mediciones independientes. La
-evidencia formal proviene del bootstrap sobre el conjunto reservado para una
-combinación fija (Sección~\ref{sec:agg}), reforzada por su robustez ante distintas
-semillas.
+Conviene ser precisos sobre qué prueba esto y qué no. Las nueve mediciones
+comparten el mismo conjunto reservado y provienen del mismo bucle, así que no
+son independientes entre sí: deben leerse como evidencia de \emph{consistencia
+direccional} (todas las configuraciones favorecen al conjunto), no como una
+prueba formal. La prueba formal viene a continuación.
 
-\subsection{Cómo Conviene Combinar las Predicciones}
+\subsection{El Resultado Central: Solo el Apilamiento Gana con Significancia}
 \label{sec:agg}
 
-La Tabla~\ref{tab:aggregations} y la Fig.~\ref{fig:aggregations} comparan las
-cuatro estrategias sobre el mismo conjunto reservado, en un experimento controlado
-independiente del bucle de búsqueda: se fija un conjunto de submodelos y un modelo
-único (con $\text{exact}_\text{únic}=6.80\,\%$), y solo se varía la forma de
-combinar. Por eso las exactitudes absolutas de esta tabla
-($\text{exact}_\text{conj}=11.90\,\%$ para apilamiento) no son directamente
-comparables con los puntos individuales de la Tabla~\ref{tab:phase4}, que
-corresponden a distintas configuraciones del recorrido.
+En un experimento controlado, independiente del bucle de búsqueda, fijamos los
+cuatro submodelos y el modelo único, y variamos únicamente la forma de combinar
+las predicciones. La Tabla~\ref{tab:aggregations} y la
+Fig.~\ref{fig:aggregations} muestran el resultado.
 
 \begin{table}[h]
 \centering
 \caption{Comparación de formas de combinar predicciones (4 submodelos
-heterogéneos, $\text{exact}_\text{únic} = 6.80\,\%$).}
+	heterogéneos; exactitud del modelo único: 6.80\,\%).}
 \label{tab:aggregations}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Combinación} & $\text{exact}_\text{conj}$ & \textbf{Brecha}
-                    & $\text{CI}_\text{low}$ & \textbf{Veredicto} \\
+\textbf{Combinación} & \textbf{Exactitud} & \textbf{Brecha}
+                    & $\text{IC}_{95\%}$ inferior & \textbf{Veredicto} \\
 \midrule
-\textbf{Apilamiento}     & \textbf{11.90\,\%} & $\mathbf{+5.10}$ & $+0.68$ & \textbf{SOPORTADO} \\
-Votación dura            & 8.84\,\%           & $+2.04$          & $-1.70$ & INCONCLUSO \\
-Votación blanda          & 8.50\,\%           & $+1.70$          & $-2.04$ & INCONCLUSO \\
-Votación ponderada       & 7.48\,\%           & $+0.68$          & $-2.72$ & INCONCLUSO \\
+\textbf{Apilamiento}     & \textbf{11.90\,\%} & $\mathbf{+5.10}$\,pp & $+0.68$ & \textbf{SOPORTADO} \\
+Votación dura            & 8.84\,\%           & $+2.04$\,pp          & $-1.70$ & INCONCLUSO \\
+Votación blanda          & 8.50\,\%           & $+1.70$\,pp          & $-2.04$ & INCONCLUSO \\
+Votación ponderada       & 7.48\,\%           & $+0.68$\,pp          & $-2.72$ & INCONCLUSO \\
 \bottomrule
+
 \end{tabular}
+
 \end{table}
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.72\linewidth]{fig2_aggregations.png}
-  \caption{Exactitud del conjunto según la forma de combinar predicciones. La
-  línea naranja marca la exactitud del modelo único (6.80\,\%). Solo el
-  apilamiento (verde) lo supera con significancia formal.}
-  \label{fig:aggregations}
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{fig2_aggregations.png}
+	\caption{Exactitud del conjunto según la forma de combinar predicciones. La
+		línea punteada marca la exactitud del modelo único (6.80\,\%). Solo el
+		apilamiento (stacking) lo supera con significancia formal.}
+	\label{fig:aggregations}
 \end{figure}
 
-El apilamiento es la única estrategia cuyo intervalo no incluye el cero
-($\text{CI}_\text{low}=+0.68$\,pp). Las tres votaciones quedan \emph{por debajo}
-del modelo único en exactitud absoluta: promediar a ciegas las predicciones de
-submodelos que vieron pocos datos termina perjudicando, salvo que un meta-modelo
-aprenda a distinguir cuándo conviene escuchar a cada uno.
+El aprendizaje es doble. Primero, el apilamiento es la única estrategia cuyo
+intervalo de confianza excluye el cero: el conjunto supera al modelo único por
+$+5.10$\,pp con significancia formal, y el resultado se mantiene al repetir el
+análisis con cuatro semillas aleatorias distintas. Segundo ---y quizás más
+revelador---, las tres votaciones simples no solo no alcanzan significancia:
+quedan \emph{por debajo} del modelo único en exactitud absoluta. Promediar a
+ciegas las predicciones de submodelos que vieron pocos datos termina
+perjudicando el resultado, salvo que un meta-modelo aprenda a distinguir
+cuándo conviene escuchar a cada uno. La diversidad, por sí sola, no alcanza: hay que saber
+combinarla.
 
-Como se evalúan cuatro formas de combinar, una corrección por comparaciones
-múltiples (por ejemplo, Bonferroni con $\alpha=0.0125$) endurecería el umbral de
-significancia, y el $\text{CI}_\text{low}=+0.68$\,pp del apilamiento es marginal
-bajo ese criterio más estricto. Por eso la solidez del resultado no descansa en
-un único test, sino en la convergencia de tres líneas de evidencia: (i) el
-bootstrap del apilamiento es robusto ante 4 semillas independientes; (ii) las 9
-mediciones del bucle son direccionalmente consistentes (todas positivas); y
-(iii) los dos experimentos controlados (Sección~\ref{sec:ablations}) delimitan de
-forma interpretable cuándo el efecto aparece y cuándo desaparece.
-
-\paragraph{Robustez ante la semilla del bootstrap.} Para descartar que la
-significancia del apilamiento sea un artefacto del muestreo aleatorio, repetimos
-el cálculo del intervalo con 4 semillas independientes ($\{1337, 42, 7, 2024\}$):
-el $\text{CI}_\text{low}$ se mantuvo positivo en los cuatro casos (entre $+0.68$ y
-$+1.02$\,pp, veredicto SOPORTADO en todos), lo que confirma que el resultado es
-una propiedad robusta de los datos.
+Dos precisiones estadísticas. Primero, como se evalúan cuatro formas de
+combinar, una corrección de Bonferroni ($\alpha=0.0125$) endurecería el umbral
+de significancia, y el $\text{IC}_\text{inf}=+0.68$\,pp del apilamiento es
+marginal bajo ese criterio más estricto; por eso la solidez del resultado no
+descansa en un único test, sino en la convergencia de tres líneas de evidencia:
+el bootstrap del apilamiento, las nueve mediciones direccionalmente
+consistentes y los dos experimentos controlados de la próxima sección. Segundo,
+al repetir el cálculo del intervalo con cuatro semillas independientes
+($\{1337, 42, 7, 2024\}$) el $\text{IC}_\text{inf}$ se mantuvo positivo en los
+cuatro casos (entre $+0.68$ y $+1.02$\,pp, veredicto SOPORTADO en todos).
 
 % -----------------------------------------------------------------------
 \section{¿Cuándo Funciona y Cuándo No?}
 \label{sec:ablations}
 
 La ventaja del conjunto no es universal. Dos experimentos controlados
-(Tabla~\ref{tab:ablations}) muestran sus límites.
+(Tabla~\ref{tab:ablations}) muestran sus límites, y son quizás el aprendizaje
+más útil de este trabajo.
 
-\subsection{Si la Red Base es Demasiado Pequeña}
+\textbf{Si la red base es demasiado pequeña, la ventaja desaparece.} Repetimos
+todo el flujo con un codificador más chico (dimensión $d{=}128$ en lugar de
+192). Aunque el modelo único mejora en términos absolutos (11.6\,\%), el
+apilamiento ya no aporta nada: la brecha cae exactamente a cero, con un
+intervalo de confianza degenerado ($[-0.04,\,+0.04]$). La interpretación es que, con
+menos capacidad, las distintas cabezas no logran extraer señales
+\emph{diferentes} de las mismas características: los submodelos convergen a lo
+mismo, cometen los mismos errores, y no queda diversidad que combinar.
 
-Repetimos todo el flujo con una red base más chica ($d{=}128$). Aunque el modelo
-único mejora en términos absolutos ($\text{exact}_\text{únic}{=}11.6\,\%$ frente a
-$6.8\,\%$), el apilamiento ya no aporta nada: la brecha cae a cero y el intervalo
-incluye el cero ($[-0.044,\,+0.044]$, RECHAZADO). Con menos capacidad, los
-distintos tipos de cabeza no logran aprovechar señales independientes sobre las
-mismas características: los submodelos convergen al mismo espacio funcional,
-cometen errores parecidos, y el meta-modelo no encuentra ninguna combinación que
-supere al mejor submodelo individual.
-
-\subsection{Si Hay Pocas Clases}
-
-Repetimos el flujo con 10 clases de K700 (1\,000 videos de clasificación, conjunto
-reservado de 200, misma $d{=}192$). Con 10 clases el espacio es estrecho: el
-reparto equilibrado le da a cada submodelo porciones muy parecidas, y todos
-aprenden algo casi idéntico. Curiosamente, concentrar los datos en menos clases
-hace al modelo único más fuerte ($\text{exact}_\text{únic}{=}22.5\,\%$, $2.25$
-veces el azar de $1/10$), pero el conjunto no logra superarlo
-($\Delta{=}-1.5$\,pp, IC $[-7.0,\,+5.0]$, RECHAZADO de forma concluyente: el
-extremo superior $+5.0$ descarta cualquier efecto cercano al $+5.10$ observado con
-30 clases).
+\textbf{Si hay pocas clases, tampoco.} Repetimos el flujo con 10 clases en
+lugar de 30.
+Concentrar los datos en menos clases hace al modelo único más fuerte
+(22.5\,\% de exactitud), pero el conjunto no logra
+superarlo: la brecha es incluso negativa ($-1.5$\,pp). Con un espacio de clases estrecho, el reparto
+de datos le da a cada submodelo porciones muy parecidas, y de nuevo todos
+aprenden casi lo mismo.
 
 \begin{table}[h]
 \centering
-\caption{Experimentos controlados (apilamiento): la ventaja del conjunto requiere
-una red base con capacidad suficiente \emph{y} un espacio de clases amplio. En los
-dos casos degradados el modelo único es más fuerte, pero el conjunto no lo supera.}
+\caption{Experimentos controlados (apilamiento): la ventaja del conjunto
+requiere una red base con capacidad suficiente \emph{y} un espacio de clases
+amplio.}
 \label{tab:ablations}
 \begin{tabular}{lcccc}
 \toprule
@@ -485,178 +681,200 @@ Pocas clases       & 192 & 10 & $-1.50$\,pp & RECHAZADO \\
 \end{tabular}
 \end{table}
 
+Los dos experimentos apuntan al mismo mecanismo: el conjunto vale lo que vale
+su diversidad. Cualquier factor que empuje a los submodelos hacia la misma
+solución ---poca capacidad, pocas clases--- anula la ventaja, por más que el
+apilamiento intente explotarla.
+
 % -----------------------------------------------------------------------
 \section{Análisis}
 
-\subsection{Por Qué el Apilamiento es Imprescindible}
+\textbf{Por qué el apilamiento es imprescindible.} Cuando todos los submodelos
+tienen la misma cabeza, sus predicciones se parecen tanto que el meta-modelo no
+puede más que repetir el consenso, y la brecha se desvanece (así ocurría en una
+versión homogénea previa, con brecha $\approx 0$). La diversidad de cabezas
+cambia esto: cada tipo de cabeza acierta y falla de manera distinta, y el
+apilamiento aprende a ponderarlas según convenga. Las votaciones simples, que
+tratan a todos por igual, no pueden hacerlo y quedan por debajo del modelo
+único.
 
-Cuando todos los submodelos tienen la misma cabeza, sus predicciones se parecen
-tanto que el meta-modelo no puede más que repetir el consenso, y la brecha se
-desvanece (así ocurría en una versión homogénea previa, con brecha
-$\approx 0$). La diversidad de cabezas cambia esto: la cabeza lineal capta señales
-generales promediadas, la MLP agrega matices puntuales, y la atencional rescata la
-estructura temporal. Como cada cabeza acierta y falla de manera distinta, el
-apilamiento aprende pesos diferenciados sobre las $N{\times}C$ probabilidades y
-aprovecha esa diversidad; las votaciones simples, que tratan a todos por igual, no
-pueden hacerlo y quedan por debajo del modelo único.
-
-\subsection{La Ventaja se Achica Cuando el Modelo Único Mejora}
-
-La Fig.~\ref{fig:gap_vs_gen} relaciona la exactitud del modelo único con la brecha
-a lo largo de las nueve mediciones.
+\textbf{La ventaja se achica cuando el modelo único mejora.} La
+Fig.~\ref{fig:gap_vs_gen} relaciona la exactitud del modelo único con la brecha
+a lo largo de las nueve mediciones: a medida que el modelo único mejora, la
+brecha se reduce de forma marcada. Tiene sentido: el modelo único ve todos los
+datos y aprovecha mejor cada mejora del clasificador que un submodelo que solo
+ve una porción. La ventaja del conjunto es, entonces, más notoria cuando los
+modelos individuales son relativamente débiles, en línea con la
+literatura~\cite{lakshminarayanan2017simple}. Al ser una relación observacional
+sobre nueve configuraciones, debe leerse como tendencia, no como efecto causal.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.72\linewidth]{fig3_gap_vs_general.png}
-  \caption{La brecha se achica a medida que el modelo único mejora. Cada punto es
-  una medición de la Fase 4. La tendencia es marcada (pendiente $\approx -0.69$,
-  $R^2 \approx 0.80$): por cada punto que gana el modelo único, la brecha se
-  reduce unos 0.69 puntos. Al ser una relación observacional sobre 9
-  configuraciones, la pendiente debe leerse como tendencia, no como efecto causal.}
+  \includegraphics[width=0.80\linewidth]{fig3_gap_vs_general.png}
+  \caption{La brecha se achica a medida que el modelo único mejora. Cada punto
+  es una medición del recorrido de búsqueda (pendiente $\approx -0.69$,
+  $R^2 \approx 0.80$).}
   \label{fig:gap_vs_gen}
 \end{figure}
-
-Tiene sentido: el modelo único ve todos los datos y aprovecha mejor cada mejora
-del clasificador que un submodelo, que solo ve una porción. La ventaja del
-conjunto es, entonces, más notoria cuando los modelos individuales son
-relativamente débiles, en línea con lo observado en la
-literatura~\cite{lakshminarayanan2017simple}.
-
-\subsection{Las Dos Condiciones para que Funcione}
-
-Los dos experimentos delimitan, juntos, las condiciones necesarias: una
-\textbf{red base con capacidad suficiente} ($d \geq 192$; por debajo, los
-submodelos no cometen errores distintos) y una \textbf{cantidad de clases
-suficiente} ($C \geq 30$; con pocas clases, convergen a la misma solución).
-Ninguna alcanza por sí sola: hacen falta ambas, junto con el apilamiento y la
-evaluación sobre múltiples fragmentos.
 
 % -----------------------------------------------------------------------
 \section{Limitaciones}
 
-\begin{enumerate}
-  \item \textbf{Conjunto reservado chico} (294 videos, $\approx 0.34$\,pp por
-        video): los intervalos de cada medición individual son anchos
-        ($\approx 6$--$8$\,pp). La significancia es sólida en el promedio de las
-        nueve mediciones y en la comparación directa entre formas de combinar.
-        Un conjunto reservado de $\geq 1\,000$ videos daría más poder estadístico
-        por medición.
-
-  \item \textbf{Exactitudes absolutas bajas}: alrededor del 12\,\% sobre 30 clases
-        ($\approx 3.6$ veces el azar de $1/30$), reflejo de la limitada calidad
-        del codificador entrenado sobre solo 3\,000 videos. V-JEPA original usa
-        unos 2 millones de videos ($\approx 670$ veces más), lo que ubica este
-        trabajo en un régimen de cómputo y datos sumamente acotado.
-
-  \item \textbf{Diversidad limitada a la cabeza}: todos los submodelos comparten
-        el mismo codificador. Lograr codificadores realmente distintos exigiría
-        varios entrenamientos sin etiquetas, fuera del alcance del hardware
-        disponible.
-
-  \item \textbf{Dependencia estadística y variabilidad de entrenamiento}: las nueve
-        mediciones comparten el conjunto reservado y provienen del mismo bucle (no
-        son independientes), y los resultados surgen de un único entrenamiento del
-        codificador y de un único conjunto de submodelos. La única incertidumbre
-        cuantificada es la del bootstrap; no se repitió el entrenamiento con varias
-        semillas, por lo que la variabilidad de inicialización queda fuera de los
-        intervalos.
-\end{enumerate}
+Cuatro limitaciones acotan el alcance de las conclusiones. Primero, el conjunto
+reservado es chico (294 videos), por lo que los intervalos de cada medición
+individual son anchos. Segundo, las exactitudes
+absolutas son bajas (alrededor del 12\,\% sobre 30 clases, unas 3.6 veces el
+azar): reflejan que el codificador se entrenó con solo 3\,000 videos, unas 670
+veces menos que el V-JEPA original. Tercero, la diversidad del conjunto se
+limita a la cabeza de clasificación: todos los submodelos comparten el mismo
+codificador, porque entrenar varios codificadores excedía la capacidad del
+hardware disponible. Cuarto, los resultados provienen de un único entrenamiento del
+codificador; la única incertidumbre cuantificada es la del bootstrap, y la
+variabilidad por inicialización queda fuera de los intervalos.
 
 % -----------------------------------------------------------------------
 \section{Conclusiones}
 
 La hipótesis central de pico-JEPA ---un conjunto de modelos pequeños sobre
-porciones de datos supera a un único modelo entrenado con todos los datos--- queda
-\textbf{validada con significancia estadística formal} cuando concurren tres
-condiciones: diversidad en la cabeza de clasificación, apilamiento como forma de
+porciones de datos supera a un único modelo entrenado con todos los datos---
+queda validada con significancia estadística formal, pero solo cuando concurren
+tres condiciones: diversidad entre los submodelos, apilamiento como forma de
 combinar, y evaluación sobre múltiples fragmentos. La brecha es de $+5.10$\,pp
-(IC 95\,\% bootstrap $[+0.68,\,+9.19]$, robusto ante 4 semillas); además, las
-nueve mediciones del bucle son direccionalmente consistentes
-($\bar\Delta{=}+2.53$\,pp, todas positivas). Dos experimentos controlados marcan
-los límites: la ventaja se anula con una red base de menor capacidad ($d{=}128$) o
-con pocas clases (10), porque en ambos casos los submodelos convergen al mismo
-espacio funcional y no generan la diversidad que el apilamiento explota.
+(IC 95\,\% $[+0.68,\,+9.19]$, robusto ante cuatro semillas), y las nueve
+mediciones del recorrido de búsqueda son direccionalmente consistentes. Dos
+experimentos controlados marcan los límites: la ventaja se anula con una red
+base de menor capacidad o con pocas clases, porque en ambos casos los
+submodelos convergen a la misma solución y no generan la diversidad que el
+apilamiento explota.
 
-Como trabajo futuro proponemos: (1) ampliar el conjunto de entrenamiento sin
-etiquetas para mejorar la calidad del codificador ---medida por \emph{sondeo
-lineal}, la exactitud de una única capa lineal entrenada sobre el codificador
-congelado; objetivo: $> 25\,\%$---, lo que liberaría el techo de la clasificación;
-(2) caracterizar cómo cambia la brecha entre 10 y 30 clases, para ubicar el punto
-donde nace la ventaja; y (3) hacer lo mismo variando la dimensión $d$ de la red
-base.
+El mensaje práctico para quien trabaje con recursos acotados: dividir los datos
+entre varios modelos pequeños puede ganar, pero no gratis. Hay que diseñar la
+diversidad (cabezas distintas), aprender la combinación (apilamiento en lugar
+de votación) y verificar que el problema tenga espacio suficiente (capacidad y
+clases) para que esa diversidad exista.
 
-% -----------------------------------------------------------------------
-% \section*{Agradecimientos}
-%
-% Agradecemos al proyecto K700 por los datos públicos.
+Como trabajo futuro proponemos ampliar el conjunto de entrenamiento sin
+etiquetas, lo que liberaría el techo de la clasificación, y ubicar el punto
+donde nace la ventaja caracterizando cómo cambia la brecha al variar la
+cantidad de clases entre 10 y 30 y la dimensión $d$ de la red base.
 
 % -----------------------------------------------------------------------
 \bibliographystyle{splncs04}
 {\footnotesize
-\begin{multicols}{2}
+%\begin{multicols}{2}
 \begin{thebibliography}{10}
+\scriptsize
 
 \bibitem{lecun2022path}
 Y.~LeCun,
-``A path towards autonomous machine intelligence,''
+``A path towards autonomous machine intelligence'',
 \emph{OpenReview}, 2022.
 
 \bibitem{assran2023self}
 M.~Assran et al.,
 ``Self-supervised learning from images with a joint-embedding predictive
-architecture,''
+architecture'',
 in \emph{CVPR}, 2023.
 
 \bibitem{bardes2024revisiting}
 A.~Bardes et al.,
 ``Revisiting feature prediction for learning visual representations from
-video,''
+video'',
 \emph{arXiv:2404.08471}, 2024.
+
+\bibitem{chen2020simple}
+T.~Chen, S.~Kornblith, M.~Norouzi, and G.~Hinton,
+``A simple framework for contrastive learning of visual representations'',
+in \emph{ICML}, 2020.
+
+\bibitem{grill2020bootstrap}
+J.-B.~Grill et al.,
+``Bootstrap your own latent: A new approach to self-supervised learning'',
+in \emph{NeurIPS}, 2020.
+
+\bibitem{he2022masked}
+K.~He, X.~Chen, S.~Xie, Y.~Li, P.~Dollár, and R.~Girshick,
+``Masked autoencoders are scalable vision learners'',
+in \emph{CVPR}, 2022.
+
+\bibitem{tong2022videomae}
+Z.~Tong, Y.~Song, J.~Wang, and L.~Wang,
+``VideoMAE: Masked autoencoders are data-efficient learners for
+self-supervised video pre-training'',
+in \emph{NeurIPS}, 2022.
+
+\bibitem{dosovitskiy2021image}
+A.~Dosovitskiy et al.,
+``An image is worth $16{\times}16$ words: Transformers for image recognition
+at scale'',
+in \emph{ICLR}, 2021.
+
+\bibitem{wolpert1992stacked}
+D.~H.~Wolpert,
+``Stacked generalization'',
+\emph{Neural Networks}, vol.\ 5, no.\ 2, pp.\ 241--259, 1992.
+
+\bibitem{shazeer2017outrageously}
+N.~Shazeer et al.,
+``Outrageously large neural networks: The sparsely-gated mixture-of-experts
+layer'',
+in \emph{ICLR}, 2017.
+
+
+\bibitem{hutter2019automated}
+F.~Hutter, L.~Kotthoff, and J.~Vanschoren, eds.,
+\emph{Automated Machine Learning: Methods, Systems, Challenges},
+Springer, 2019.
 
 \bibitem{dietterich2000ensemble}
 T.~G.~Dietterich,
-``Ensemble methods in machine learning,''
+``Ensemble methods in machine learning'',
 in \emph{Multiple Classifier Systems}, Springer, 2000, pp.\ 1--15.
 
 \bibitem{lakshminarayanan2017simple}
 B.~Lakshminarayanan, A.~Pritzel, and C.~Blundell,
-``Simple and scalable predictive uncertainty estimation using deep ensembles,''
+``Simple and scalable predictive uncertainty estimation using deep ensembles'',
 in \emph{NeurIPS}, 2017.
 
 \bibitem{wenzel2020hyperparameter}
 F.~Wenzel et al.,
-``Hyperparameter ensembles for robustness and uncertainty quantification,''
+``Hyperparameter ensembles for robustness and uncertainty quantification'',
 in \emph{NeurIPS}, 2020.
 
 \bibitem{fort2019deep}
 S.~Fort, H.~Hu, and B.~Lakshminarayanan,
-``Deep ensembles: A loss landscape perspective,''
+``Deep ensembles: A loss landscape perspective'',
 \emph{arXiv:1912.02757}, 2019.
 
 \bibitem{wang2018temporal}
 L.~Wang et al.,
-``Temporal segment networks for action recognition in videos,''
+``Temporal segment networks for action recognition in videos'',
 \emph{IEEE Trans.\ Pattern Anal.\ Mach.\ Intell.}, vol.\ 41,
 pp.\ 2740--2755, 2018.
 
 \bibitem{jacobs1991adaptive}
 R.~A.~Jacobs, M.~I.~Jordan, S.~J.~Nowlan, and G.~E.~Hinton,
-``Adaptive mixtures of local experts,''
+``Adaptive mixtures of local experts'',
 \emph{Neural Computation}, vol.\ 3, no.\ 1, pp.\ 79--87, 1991.
 
 \bibitem{smaira2020short}
 L.~Smaira et al.,
-``A short note on the Kinetics-700-2020 human action dataset,''
+``A short note on the Kinetics-700-2020 human action dataset'',
 \emph{arXiv:2010.10864}, 2020.
 
 \bibitem{rostagno2025pico}
 A.~Rostagno et al.,
 ``pico-JEPA: Comprendiendo el Video con Modelos Ultra-Ligeros y la
-Sabiduría Colectiva,''
+Sabiduría Colectiva'',
 in \emph{XXXI Congreso Argentino de Ciencias de la Computación (CACIC)}, 2025.
 
+\bibitem{karpathy2025autoresearch}
+A.~Karpathy,
+``autoresearch: automated hypothesis testing'',
+\url{https://github.com/karpathy/autoresearch}, 2025.
+
 \end{thebibliography}
-\end{multicols}
+%\end{multicols}
 }
 
 \end{document}
