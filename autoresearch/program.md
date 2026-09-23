@@ -87,8 +87,7 @@ The proposer's response is parsed strictly. Any extra text is discarded.
 - If `pretrain` linear probe stays below 0.15 for many iters, the bottleneck
   is encoder capacity, not classify/ensemble. Prefer increasing `num_epochs`
   (16-32) over deeper search in classify.
-- **Two thresholds gate the central hypothesis** (both documented in
-  `INFORME_PHASE4.md` ablation sections). The ensemble only beats the general
+- **Two thresholds gate the central hypothesis**. The ensemble only beats the general
   when BOTH hold; in either degraded regime the submodels converge to the
   general's functional space and `gap` collapses to ~0 (REJECTED):
   1. **Encoder capacity** `vit_embed_dim >= 192`. With `embed_dim=128` the
