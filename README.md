@@ -72,8 +72,8 @@ It builds on our previous publication:
 1. **Create and activate a Conda environment:**
 
     ```bash
-    conda create -n pico-jepa python=3.12 -y
-    conda activate pico-jepa
+    conda create -n pico-jepa-v2 python=3.12 -y
+    conda activate pico-jepa-v2
     ```
 
 2. **Install PyTorch** (pick one):
