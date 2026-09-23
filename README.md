@@ -36,19 +36,6 @@ If you use this code, please cite:
 The manuscript lives under [paper/](paper/) and the conference talk under
 [slides/](slides/).
 
-It builds on our previous publication:
-
-```bibtex
-@inproceedings{rostagno2025pico,
-  title     = {pico-JEPA: Comprendiendo el Video con Modelos Ultra-Ligeros y la Sabiduría Colectiva},
-  author    = {Rostagno, Adrián and Iparraguirre, Javier and Friedrich, Guillermo and Aggio, Santiago and Briatore, Roberto and Tobio, Lucas and Coca, Diego},
-  booktitle = {XXXI Congreso Argentino de Ciencias de la Computación (CACIC)},
-  year      = {2025},
-  address   = {Viedma, Argentina},
-  month     = {October}
-}
-```
-
 ## Project Structure
 
 - `app/` — core scripts: `train.py` (JEPA pre-training), `classify_videos.py`
