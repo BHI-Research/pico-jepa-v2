@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pico-JEPA v2: When Do Many Small Models Beat One Big Model?</title>
+<meta name="description" content="Self-supervised video representation learning on a single desktop GPU. An ensemble of small JEPA models beats one larger model by +5.10 pp — but only under specific conditions. CACIC 2026.">
+<meta name="author" content="Adrián Rostagno, Javier Iparraguirre, Roberto Briatore, Agustín González, Santiago Aggio">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="pico-JEPA v2: When Do Many Small Models Beat One Big Model?">
+<meta property="og:description" content="Self-supervised video representation learning on a single desktop GPU. An ensemble of small JEPA models beats one larger model by +5.10 pp — but only under specific conditions. CACIC 2026.">
+<meta name="twitter:card" content="summary">
+
+<link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>pico-JEPA v2</h1>
+  <p class="subtitle">When Do Many Small Models Beat One Big Model?</p>
+
+  <p class="authors">
+    Adrián Rostagno · Javier Iparraguirre · Roberto Briatore ·
+    Agustín González · Santiago Aggio
+  </p>
+  <p class="affiliation">
+    Universidad Tecnológica Nacional, Facultad Regional Bahía Blanca, Argentina
+  </p>
+  <p class="venue">
+    <strong>CACIC 2026</strong> — XXXII Congreso Argentino de Ciencias de la
+    Computación · Concepción del Uruguay, Entre Ríos, Argentina · 5–9 October 2026
+  </p>
+
+  <nav class="buttons">
+    <a class="btn" href="https://github.com/BHI-Research/pico-jepa-v2/blob/main/paper/paper_pico-JEPA-v2.pdf">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm0 2.5L17.5 8H14V4.5zM8 13h8v1.5H8V13zm0 3h8v1.5H8V16zm0-6h4v1.5H8V10z"/></svg>
+      Paper (PDF, Spanish)
+    </a>
+    <a class="btn" href="https://github.com/BHI-Research/pico-jepa-v2">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2c-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.12 3.06.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.68.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5z"/></svg>
+      Code
+    </a>
+    <a class="btn" href="https://github.com/BHI-Research/pico-jepa-v2/blob/main/slides/pico-JEPA-v2_CACIC-2026-presentation_EN.pdf">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v12H3V4zm0 14h18v2H3v-2zm2-12v8h14V6H5z"/></svg>
+      Slides (EN)
+    </a>
+    <a class="btn" href="https://github.com/BHI-Research/pico-jepa-v2/blob/main/slides/pico-JEPA-v2_CACIC-2026-presentation_ES.pdf">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v12H3V4zm0 14h18v2H3v-2zm2-12v8h14V6H5z"/></svg>
+      Slides (ES)
+    </a>
+  </nav>
+</header>
+
+<section>
+  <h2>Abstract</h2>
+  <p class="lead">
+    pico-JEPA learns to represent videos without labels, on a machine you can
+    keep under a desk. In this second version we test a simple idea: instead of
+    training one model on all the data, train several small models — each on a
+    different slice — and combine their predictions. We evaluate on 30
+    Kinetics-700 classes with a compact ~3.4M-parameter network trained on a
+    single desktop GPU.
+  </p>
+  <p>
+    The main result: when the ensemble's members are diverse and their
+    predictions are combined by a learned meta-model (<em>stacking</em>), the
+    ensemble beats the single model by <strong>+5.10 percentage points</strong>,
+    with formal statistical significance. But the advantage is not universal —
+    two controlled experiments show it vanishes if the backbone is too small or
+    if there are too few classes. Rather than a yes-or-no validation, our
+    central contribution is a <em>map of the conditions</em> under which the
+    collective wisdom of small models beats the single large one.
+  </p>
+</section>
+
+<section>
+  <h2>Key results</h2>
+
+  <div class="stats">
+    <div class="stat hero">
+      <span class="value">+5.10</span>
+      <span class="label">percentage-point gap over the single model (stacking, 95% CI [+0.68, +9.19])</span>
+    </div>
+    <div class="stat">
+      <span class="value">9 / 9</span>
+      <span class="label">holdout measurements favouring the ensemble across the search</span>
+    </div>
+    <div class="stat">
+      <span class="value">3.4M</span>
+      <span class="label">parameters in the backbone, trained on one desktop GPU</span>
+    </div>
+    <div class="stat">
+      <span class="value">30</span>
+      <span class="label">Kinetics-700 classes, 4 ensemble submodels</span>
+    </div>
+  </div>
+
+  <figure>
+    <div class="chart">
+      <p class="chart-title">Ensemble top-1 accuracy by aggregation method</p>
+
+      <div class="row">
+        <div class="row-head">
+          <span class="name">Stacking</span>
+          <span class="ann">+5.10 pp · CI [+0.68, +9.19] ·
+            <span class="verdict good">SUPPORTED</span></span>
+        </div>
+        <div class="track" title="Stacking — 11.90% top-1, gap +5.10 pp">
+          <div class="bar" style="width:85.0%"></div>
+          <div class="refline" aria-hidden="true"></div>
+          <span class="val" style="left:85.0%">11.90%</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="row-head">
+          <span class="name">Hard voting</span>
+          <span class="ann">+2.04 pp · CI [−1.70, +5.78] ·
+            <span class="verdict none">INCONCLUSIVE</span></span>
+        </div>
+        <div class="track" title="Hard voting — 8.84% top-1, gap +2.04 pp">
+          <div class="bar" style="width:63.1%"></div>
+          <div class="refline" aria-hidden="true"></div>
+          <span class="val" style="left:63.1%">8.84%</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="row-head">
+          <span class="name">Soft voting</span>
+          <span class="ann">+1.70 pp · CI [−2.04, +6.12] ·
+            <span class="verdict none">INCONCLUSIVE</span></span>
+        </div>
+        <div class="track" title="Soft voting — 8.50% top-1, gap +1.70 pp">
+          <div class="bar" style="width:60.7%"></div>
+          <div class="refline" aria-hidden="true"></div>
+          <span class="val" style="left:60.7%">8.50%</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="row-head">
+          <span class="name">Weighted voting</span>
+          <span class="ann">+0.68 pp · CI [−2.72, +4.42] ·
+            <span class="verdict none">INCONCLUSIVE</span></span>
+        </div>
+        <div class="track" title="Weighted voting — 7.48% top-1, gap +0.68 pp">
+          <div class="bar" style="width:53.4%"></div>
+          <div class="refline" aria-hidden="true"></div>
+          <span class="val" style="left:53.4%">7.48%</span>
+        </div>
+      </div>
+
+      <p class="chart-foot">
+        <span class="ref-key" aria-hidden="true"></span>
+        dashed line: single model, 6.80%
+      </p>
+    </div>
+    <figcaption>
+      Ensemble accuracy by aggregation method. Only stacking beats the single
+      model with formal significance — its confidence interval is the only one
+      that excludes zero. Exact values in the table below.
+    </figcaption>
+  </figure>
+
+  <p class="table-note" id="t1-note">
+    How the predictions are combined (4 heterogeneous submodels; single model:
+    6.80%). The verdict is <em>supported</em> when the bootstrap 95% confidence
+    interval excludes zero.
+  </p>
+  <div class="table-scroll">
+    <table aria-label="Ensemble accuracy by aggregation method"
+           aria-describedby="t1-note">
+      <thead>
+        <tr>
+          <th scope="col">Combination</th>
+          <th scope="col">Accuracy</th>
+          <th scope="col">Gap</th>
+          <th scope="col">95% CI lower</th>
+          <th scope="col">Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="highlight">
+          <td>Stacking</td><td>11.90%</td><td>+5.10 pp</td><td>+0.68</td>
+          <td><span class="verdict good">SUPPORTED</span></td>
+        </tr>
+        <tr>
+          <td>Hard voting</td><td>8.84%</td><td>+2.04 pp</td><td>−1.70</td>
+          <td><span class="verdict none">INCONCLUSIVE</span></td>
+        </tr>
+        <tr>
+          <td>Soft voting</td><td>8.50%</td><td>+1.70 pp</td><td>−2.04</td>
+          <td><span class="verdict none">INCONCLUSIVE</span></td>
+        </tr>
+        <tr>
+          <td>Weighted voting</td><td>7.48%</td><td>+0.68 pp</td><td>−2.72</td>
+          <td><span class="verdict none">INCONCLUSIVE</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>When it works — and when it doesn't</h3>
+  <p>
+    Two controlled experiments mark the boundaries. Shrinking the backbone or
+    narrowing the class space pushes the submodels toward the same solution, so
+    the diversity that stacking exploits never appears — and the advantage
+    disappears with it.
+  </p>
+
+  <p class="table-note" id="t2-note">
+    Controlled experiments (stacking). The ensemble's advantage needs a backbone
+    with enough capacity <em>and</em> a wide class space.
+  </p>
+  <div class="table-scroll">
+    <table aria-label="Controlled experiments on backbone width and class count"
+           aria-describedby="t2-note">
+      <thead>
+        <tr>
+          <th scope="col">Variant</th>
+          <th scope="col">Width <em>d</em></th>
+          <th scope="col">Classes</th>
+          <th scope="col">Gap</th>
+          <th scope="col">Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="highlight">
+          <td>Main</td><td>192</td><td>30</td><td>+5.10 pp</td>
+          <td><span class="verdict good">SUPPORTED</span></td>
+        </tr>
+        <tr>
+          <td>Lower capacity</td><td>128</td><td>30</td><td>+0.00 pp</td>
+          <td><span class="verdict bad">REJECTED</span></td>
+        </tr>
+        <tr>
+          <td>Few classes</td><td>192</td><td>10</td><td>−1.50 pp</td>
+          <td><span class="verdict bad">REJECTED</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Takeaway</h2>
+  <p>
+    For anyone working under tight compute: splitting your data across several
+    small models can win, but not for free. You have to <em>design</em> the
+    diversity (different heads), <em>learn</em> the combination (stacking rather
+    than voting), and check that the problem has enough room — capacity and
+    classes — for that diversity to exist at all.
+  </p>
+</section>
+
+<section>
+  <h2>Limitations</h2>
+  <p>
+    Four caveats bound these conclusions. The holdout is small (294 videos), so
+    individual intervals are wide. Absolute accuracies are low (~12% over 30
+    classes, about 3.6× chance), reflecting an encoder pre-trained on only 3,000
+    videos — some 670× less data than the original V-JEPA. Ensemble diversity is
+    confined to the classification head: all submodels share one encoder,
+    because training several encoders exceeded the available hardware. And the
+    results come from a single encoder training run, so initialisation
+    variability is not captured by the reported intervals.
+  </p>
+</section>
+
+<section>
+  <h2>BibTeX</h2>
+<pre><code>@inproceedings{rostagno2026picov2,
+  title     = {pico-JEPA v2: ¿Cuándo Superan Muchos Modelos Pequeños a Uno Grande?},
+  author    = {Rostagno, Adrián and Iparraguirre, Javier and Briatore, Roberto
+               and González, Agustín and Aggio, Santiago},
+  booktitle = {XXXII Congreso Argentino de Ciencias de la Computación (CACIC)},
+  year      = {2026},
+  address   = {Concepción del Uruguay, Entre Ríos, Argentina},
+  month     = {October}
+}</code></pre>
+</section>
+
+<footer>
+  <p>
+    Grupo de Investigación BHI · Universidad Tecnológica Nacional,
+    Facultad Regional Bahía Blanca
+  </p>
+  <p>
+    <a href="https://github.com/BHI-Research/pico-jepa-v2">github.com/BHI-Research/pico-jepa-v2</a>
+  </p>
+  <p>
+    The paper is published in Spanish; this page summarises it in English.
+  </p>
+</footer>
+
+</div>
+</body>
+</html>

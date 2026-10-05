@@ -1,0 +1,395 @@
+/* pico-JEPA v2 — project page
+   Tokens follow the lab's data-viz palette: surfaces, text ink, one accent
+   (categorical slot 1) and the fixed status roles. Dark mode is selected,
+   not an automatic flip. */
+
+:root {
+  color-scheme: light;
+  --surface-1: #fcfcfb;
+  --surface-2: #f3f3f1;
+  --border: #dcdbd6;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #76756f;
+  --accent: #2a78d6;
+  --status-good: #0ca30c;
+  --status-critical: #d03b3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --surface-2: #232322;
+    --border: #3a3a38;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #96958c;
+    --accent: #3987e5;
+    --status-good: #0ca30c;
+    --status-critical: #d03b3b;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-1: #1a1a19;
+  --surface-2: #232322;
+  --border: #3a3a38;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #96958c;
+  --accent: #3987e5;
+  --status-good: #0ca30c;
+  --status-critical: #d03b3b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 16px 72px;
+}
+
+a { color: var(--accent); }
+
+/* ---- Header ---------------------------------------------------------- */
+
+header {
+  text-align: center;
+  padding: 56px 0 8px;
+}
+
+h1 {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  margin: 0 0 24px;
+}
+
+.authors {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.affiliation,
+.venue {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 0 0 4px;
+}
+
+.venue strong { color: var(--text-primary); }
+
+/* ---- Button row ------------------------------------------------------ */
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 28px 0 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.btn svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+  flex: none;
+}
+
+/* ---- Sections -------------------------------------------------------- */
+
+section { margin-top: 48px; }
+
+h2 {
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+h3 {
+  font-size: 1.05rem;
+  margin: 28px 0 8px;
+}
+
+p { margin: 0 0 14px; }
+
+.lead { font-size: 1.02rem; }
+
+/* ---- Stat tiles ------------------------------------------------------ */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 24px 0 8px;
+}
+
+.stat {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.stat .value {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  display: block;
+}
+
+.stat.hero .value {
+  font-size: 3rem;
+  color: var(--status-good);
+}
+
+.stat .label {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ---- Figure ---------------------------------------------------------- */
+
+figure {
+  margin: 28px 0;
+}
+
+/* Bar chart. One series, so one accent hue and no legend — the title names it.
+   Identity never rests on color: every bar is directly labelled and the full
+   table sits below. Reference line = the single model. */
+
+.chart {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 20px 14px;
+  background: var(--surface-2);
+  --ref: 48.6%; /* 6.80% of the 14% axis maximum */
+}
+
+.chart-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 18px;
+}
+
+.chart .row { margin-bottom: 16px; }
+
+.row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 5px;
+}
+
+.row-head .name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.row-head .ann {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  position: relative;
+  height: 20px;
+}
+
+.bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 0 4px 4px 0;
+}
+
+/* Every bar is longer than the reference, so the line always falls on a filled
+   bar — a surface-colored dash reads as a crisp notch in both modes. */
+.refline {
+  position: absolute;
+  left: var(--ref);
+  top: 0;
+  bottom: 0;
+  border-left: 2px dashed var(--surface-2);
+}
+
+.track .val {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 8px;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.chart-foot {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ref-key {
+  width: 18px;
+  height: 10px;
+  flex: none;
+  background: var(--accent);
+  border-radius: 2px;
+  position: relative;
+}
+
+.ref-key::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  border-left: 2px dashed var(--surface-2);
+}
+
+figcaption {
+  margin-top: 10px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ---- Tables ---------------------------------------------------------- */
+
+.table-scroll {
+  overflow-x: auto;
+  margin: 18px 0 6px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.table-note {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin: 18px 0 8px;
+}
+
+th, td {
+  padding: 9px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+th:first-child, td:first-child {
+  text-align: left;
+  font-variant-numeric: normal;
+}
+
+thead th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--border);
+}
+
+tbody tr.highlight td { font-weight: 600; }
+
+.verdict {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.verdict.good { color: var(--status-good); }
+.verdict.bad { color: var(--status-critical); }
+.verdict.none { color: var(--text-muted); }
+
+/* ---- BibTeX ---------------------------------------------------------- */
+
+pre {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+/* ---- Footer ---------------------------------------------------------- */
+
+footer {
+  margin-top: 56px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+footer p { margin: 0 0 6px; }
+
+@media (max-width: 600px) {
+  body { font-size: 16px; }
+  header { padding-top: 36px; }
+  .stat.hero .value { font-size: 2.5rem; }
+}

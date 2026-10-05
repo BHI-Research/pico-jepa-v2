@@ -16,6 +16,8 @@ protected holdout.
 
 ## Publication
 
+**Project page:** <https://bhi-research.github.io/pico-jepa-v2/>
+
 **Download:** [Paper (PDF)](paper/paper_pico-JEPA-v2.pdf) &nbsp;|&nbsp;
 Slides: [Español](slides/pico-JEPA-v2_CACIC-2026-presentation_ES.pdf) ·
 [English](slides/pico-JEPA-v2_CACIC-2026-presentation_EN.pdf)
@@ -57,6 +59,7 @@ LaTeX sources for the manuscript are in [paper/](paper/); the talk is in
 - `requirements.txt` — Python dependencies.
 - `paper/` — LaTeX sources for the CACIC 2026 manuscript; see its own [README](paper/README.md).
 - `slides/` — conference talk, Spanish and English PDFs; see its own [README](slides/README.md).
+- `docs/` — GitHub Pages project page; see its own [README](docs/README.md).
 
 ---
 
