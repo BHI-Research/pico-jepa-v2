@@ -42,5 +42,6 @@ pdflatex -interaction=nonstopmode paper_pico-JEPA-v2.tex
 ```
 
 Output: `paper_pico-JEPA-v2.pdf`, 10 pages. A few warnings are normal; only
-lines starting with `!` are errors. The PDF and the `.aux`/`.log`/`.out` files
-are git-ignored.
+lines starting with `!` are errors. The built PDF is committed to the repo, so
+rebuild it whenever the `.tex` changes; the `.aux`/`.log`/`.out` files are
+git-ignored.
