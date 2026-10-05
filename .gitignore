@@ -16,9 +16,6 @@
 *.bcf
 *.run.xml
 paper/output.txt
-# Generated PDFs (reproducible via paper/compile.sh y slides/compile.sh)
-paper/*.pdf
-slides/*.pdf
 
 # ---- Python ----
 __pycache__/

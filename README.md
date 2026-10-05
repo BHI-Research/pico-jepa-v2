@@ -16,6 +16,10 @@ protected holdout.
 
 ## Publication
 
+**Download:** [Paper (PDF)](paper/paper_pico-JEPA-v2.pdf) &nbsp;|&nbsp;
+Slides: [Español](slides/pico-JEPA-v2_CACIC-2026-presentation_ES.pdf) ·
+[English](slides/pico-JEPA-v2_CACIC-2026-presentation_EN.pdf)
+
 This work is presented at **CACIC 2026** — the XXXII Congreso Argentino de
 Ciencias de la Computación, organized by [RedUNCI](https://redunci.info.unlp.edu.ar/)
 and hosted by UTN Facultad Regional Concepción del Uruguay (Entre Ríos,
@@ -33,8 +37,8 @@ If you use this code, please cite:
 }
 ```
 
-The manuscript lives under [paper/](paper/) and the conference talk under
-[slides/](slides/).
+LaTeX sources for the manuscript are in [paper/](paper/); the talk is in
+[slides/](slides/), as final PDFs with no build step.
 
 ## Project Structure
 
@@ -48,9 +52,11 @@ The manuscript lives under [paper/](paper/) and the conference talk under
   classify → ensemble → Phase-4 holdout eval) via `search_loop.py`, backed by an
   SQLite ledger, artifact promotion, budget control, and heuristic/LLM proposers.
 - `prepare_pretrain_subset.py` / `prepare_classify_subset.py` — build the K700 subsets.
-- `download_k700.sh` — dataset download helper.
+- `k700_2020_downloader.sh` / `k700_2020_extractor.sh` — K700-2020 download and extraction helpers.
 - `run_autoresearch.sh` — convenience launcher for the search loop.
 - `requirements.txt` — Python dependencies.
+- `paper/` — LaTeX sources for the CACIC 2026 manuscript; see its own [README](paper/README.md).
+- `slides/` — conference talk, Spanish and English PDFs; see its own [README](slides/README.md).
 
 ---
 
